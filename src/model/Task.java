@@ -4,23 +4,26 @@ import java.sql.Date;
 
 public class Task {
     private int id;
+    private int groupId;
     private String title;
     private String description;
     private Date deadline;
-    private int mentorId;
     
     public Task() {}
     
-    public Task(int id, String title, String description, Date deadline, int mentorId) {
+    public Task(int id, int groupId, String title, String description, Date deadline) {
         this.id = id;
+        this.groupId = groupId;
         this.title = title;
         this.description = description;
         this.deadline = deadline;
-        this.mentorId = mentorId;
     }
     
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }
+    
+    public int getGroupId() { return groupId; }
+    public void setGroupId(int groupId) { this.groupId = groupId; }
     
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
@@ -30,7 +33,4 @@ public class Task {
     
     public Date getDeadline() { return deadline; }
     public void setDeadline(Date deadline) { this.deadline = deadline; }
-    
-    public int getMentorId() { return mentorId; }
-    public void setMentorId(int mentorId) { this.mentorId = mentorId; }
 }

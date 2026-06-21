@@ -32,9 +32,9 @@ public class GroupDAO {
     
     public List<User> getGroupMembers(int groupId) {
         List<User> members = new ArrayList<>();
-        String query = "SELECT u.* FROM users u " +
-                      "JOIN group_members gm ON u.id = gm.user_id " +
-                      "WHERE gm.group_id = ?";
+        String query = "SELECT u.*, p.jurusan, p.kontak FROM users u " +
+                      "LEFT JOIN user_profiles p ON u.id = p.user_id " +
+                      "WHERE u.group_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
@@ -47,6 +47,9 @@ public class GroupDAO {
                 user.setName(rs.getString("name"));
                 user.setEmail(rs.getString("email"));
                 user.setRole(rs.getString("role"));
+                user.setGroupId(rs.getInt("group_id"));
+                user.setJurusan(rs.getString("jurusan"));
+                user.setKontak(rs.getString("kontak"));
                 members.add(user);
             }
         } catch (SQLException e) {
@@ -57,8 +60,8 @@ public class GroupDAO {
     
     public Group getGroupByUserId(int userId) {
         String query = "SELECT g.* FROM groups g " +
-                      "JOIN group_members gm ON g.id = gm.group_id " +
-                      "WHERE gm.user_id = ?";
+                      "JOIN users u ON g.id = u.group_id " +
+                      "WHERE u.id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
@@ -76,5 +79,21 @@ public class GroupDAO {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    public String getGroupNameById(int groupId) {
+        String query = "SELECT group_name FROM groups WHERE id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setInt(1, groupId);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("group_name");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return "Unknown Group";
     }
 }

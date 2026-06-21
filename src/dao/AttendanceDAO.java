@@ -1,7 +1,7 @@
-package dao;  // ← HARUS dao, BUKAN model!
+package dao;
 
-import model.Attendance;  // ← Import dari model
-import database.DBConnection;  // ← Import dari database
+import model.Attendance;
+import database.DBConnection;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -9,16 +9,41 @@ import java.util.List;
 
 public class AttendanceDAO {
     
-    public boolean addAttendance(Attendance attendance) {
-        String query = "INSERT INTO attendance (user_id, attendance_date, status) VALUES (?, ?, ?)";
+    /**
+     * Inserts a new attendance record or updates an existing one if the user and agenda already match.
+     */
+    public boolean saveOrUpdateAttendance(Attendance attendance) {
+        String checkQuery = "SELECT id FROM attendance WHERE user_id = ? AND agenda = ?";
         try (Connection conn = DBConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
+             PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
             
-            pstmt.setInt(1, attendance.getUserId());
-            pstmt.setDate(2, attendance.getAttendanceDate());
-            pstmt.setString(3, attendance.getStatus());
+            checkStmt.setInt(1, attendance.getUserId());
+            checkStmt.setString(2, attendance.getAgenda());
+            ResultSet rs = checkStmt.executeQuery();
             
-            return pstmt.executeUpdate() > 0;
+            if (rs.next()) {
+                // Record exists, let's update it
+                String updateQuery = "UPDATE attendance SET attendance_date = ?, status = ?, notes = ? WHERE user_id = ? AND agenda = ?";
+                try (PreparedStatement updateStmt = conn.prepareStatement(updateQuery)) {
+                    updateStmt.setDate(1, attendance.getAttendanceDate());
+                    updateStmt.setString(2, attendance.getStatus());
+                    updateStmt.setString(3, attendance.getNotes());
+                    updateStmt.setInt(4, attendance.getUserId());
+                    updateStmt.setString(5, attendance.getAgenda());
+                    return updateStmt.executeUpdate() > 0;
+                }
+            } else {
+                // Record does not exist, let's insert it
+                String insertQuery = "INSERT INTO attendance (user_id, agenda, attendance_date, status, notes) VALUES (?, ?, ?, ?, ?)";
+                try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
+                    insertStmt.setInt(1, attendance.getUserId());
+                    insertStmt.setString(2, attendance.getAgenda());
+                    insertStmt.setDate(3, attendance.getAttendanceDate());
+                    insertStmt.setString(4, attendance.getStatus());
+                    insertStmt.setString(5, attendance.getNotes());
+                    return insertStmt.executeUpdate() > 0;
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -38,8 +63,10 @@ public class AttendanceDAO {
                 Attendance attendance = new Attendance();
                 attendance.setId(rs.getInt("id"));
                 attendance.setUserId(rs.getInt("user_id"));
+                attendance.setAgenda(rs.getString("agenda"));
                 attendance.setAttendanceDate(rs.getDate("attendance_date"));
                 attendance.setStatus(rs.getString("status"));
+                attendance.setNotes(rs.getString("notes"));
                 attendanceList.add(attendance);
             }
         } catch (SQLException e) {
@@ -59,8 +86,38 @@ public class AttendanceDAO {
                 Attendance attendance = new Attendance();
                 attendance.setId(rs.getInt("id"));
                 attendance.setUserId(rs.getInt("user_id"));
+                attendance.setAgenda(rs.getString("agenda"));
                 attendance.setAttendanceDate(rs.getDate("attendance_date"));
                 attendance.setStatus(rs.getString("status"));
+                attendance.setNotes(rs.getString("notes"));
+                attendanceList.add(attendance);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return attendanceList;
+    }
+    
+    public List<Attendance> getAttendanceByGroupAndAgenda(int groupId, String agenda) {
+        List<Attendance> attendanceList = new ArrayList<>();
+        String query = "SELECT a.* FROM attendance a " +
+                      "JOIN users u ON a.user_id = u.id " +
+                      "WHERE u.group_id = ? AND a.agenda = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            
+            pstmt.setInt(1, groupId);
+            pstmt.setString(2, agenda);
+            ResultSet rs = pstmt.executeQuery();
+            
+            while (rs.next()) {
+                Attendance attendance = new Attendance();
+                attendance.setId(rs.getInt("id"));
+                attendance.setUserId(rs.getInt("user_id"));
+                attendance.setAgenda(rs.getString("agenda"));
+                attendance.setAttendanceDate(rs.getDate("attendance_date"));
+                attendance.setStatus(rs.getString("status"));
+                attendance.setNotes(rs.getString("notes"));
                 attendanceList.add(attendance);
             }
         } catch (SQLException e) {

@@ -234,6 +234,11 @@ public class BaseLayout extends JFrame {
         }
     }
     
+    public void showTemporaryPage(String label, JPanel panel) {
+        contentPanel.add(panel, label);
+        switchPage(label);
+    }
+    
     public void initializeLayout() {
         if (!pageMap.isEmpty()) {
             // Default to Dashboard page, or first page if not found
