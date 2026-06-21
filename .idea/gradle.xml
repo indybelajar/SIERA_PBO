@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleMigrationSettings" migrationVersion="1" />
+  <component name="GradleSettings">
+    <option name="linkedExternalProjectsSettings">
+      <GradleProjectSettings>
+        <compositeConfiguration>
+          <compositeBuild compositeDefinitionSource="SCRIPT">
+            <builds>
+              <build path="$PROJECT_DIR$/lib/FlatLaf-3.7.1/buildSrc" name="buildSrc">
+                <projects>
+                  <project path="$PROJECT_DIR$/lib/FlatLaf-3.7.1/buildSrc" />
+                </projects>
+              </build>
+            </builds>
+          </compositeBuild>
+        </compositeConfiguration>
+        <option name="externalProjectPath" value="$PROJECT_DIR$/lib/FlatLaf-3.7.1" />
+        <option name="gradleJvm" value="#JAVA_HOME" />
+        <option name="modules">
+          <set>
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/buildSrc" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-core" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-demo" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-extras" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-inter" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-jetbrains-mono" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-fonts/flatlaf-fonts-roboto-mono" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-intellij-themes" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-jide-oss" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-natives/flatlaf-natives-jna" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-natives/flatlaf-natives-linux" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-natives/flatlaf-natives-macos" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-natives/flatlaf-natives-windows" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-swingx" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-testing" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-testing/flatlaf-testing-modular-app" />
+            <option value="$PROJECT_DIR$/lib/FlatLaf-3.7.1/flatlaf-theme-editor" />
+          </set>
+        </option>
+      </GradleProjectSettings>
+    </option>
+  </component>
+</project>

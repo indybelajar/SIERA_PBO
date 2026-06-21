@@ -1,115 +1,96 @@
 package view;
 
 import model.Mentee;
-
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-public class MenteeDashboard extends JFrame {
+public class MenteeDashboard extends BaseLayout {
     private Mentee mentee;
-    private JTabbedPane tabbedPane;
     
     public MenteeDashboard(Mentee mentee) {
+        super("Mentee Dashboard - " + mentee.getName(), mentee.getName(), "Mentee");
         this.mentee = mentee;
-        initComponents();
-    }
-    
-    private void initComponents() {
-        setTitle("Mentee Dashboard - " + mentee.getName());
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 700);
-        setLocationRelativeTo(null);
         
-        // Menu bar
-        JMenuBar menuBar = new JMenuBar();
+        // Add menu items to the sidebar
+        addMenuItem("Dashboard", "🏠", createDashboardPanel());
+        addMenuItem("Tasks", "📝", new TaskView(mentee.getId()));
+        addMenuItem("Attendance", "📅", new AttendanceView(mentee.getId()));
+        addMenuItem("Profile", "👤", createProfilePanel());
         
-        JMenu menuFile = new JMenu("File");
-        JMenuItem menuLogout = new JMenuItem("Logout");
-        menuLogout.addActionListener(e -> logout());
-        menuFile.add(menuLogout);
-        menuBar.add(menuFile);
-        
-        setJMenuBar(menuBar);
-        
-        // Main panel
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        
-        // Welcome message
-        JLabel welcomeLabel = new JLabel("Welcome, Mentee " + mentee.getName() + "!");
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        mainPanel.add(welcomeLabel, BorderLayout.NORTH);
-        
-        // Tabbed pane
-        tabbedPane = new JTabbedPane();
-        
-        // Dashboard tab
-        JPanel dashboardPanel = createDashboardPanel();
-        tabbedPane.addTab("Dashboard", dashboardPanel);
-        
-        // Tasks tab
-        TaskView taskView = new TaskView(mentee.getId());
-        tabbedPane.addTab("Tasks", taskView);
-        
-        // Attendance tab
-        AttendanceView attendanceView = new AttendanceView(mentee.getId());
-        tabbedPane.addTab("Attendance", attendanceView);
-        
-        // Profile tab
-        JPanel profilePanel = createProfilePanel();
-        tabbedPane.addTab("Profile", profilePanel);
-        
-        mainPanel.add(tabbedPane, BorderLayout.CENTER);
-        add(mainPanel);
+        // Initialize layout and show default tab
+        initializeLayout();
     }
     
     private JPanel createDashboardPanel() {
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(2, 2, 20, 20));
+        JPanel panel = new JPanel(new BorderLayout(20, 20));
         panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
         
-        // Stats cards
+        // Welcome Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+        JLabel welcomeLabel = new JLabel("Welcome, Mentee " + mentee.getName() + "!");
+        welcomeLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        JLabel descLabel = new JLabel("Keep track of your tasks and check your attendance stats.");
+        descLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        descLabel.setForeground(Color.GRAY);
+        headerPanel.add(welcomeLabel, BorderLayout.NORTH);
+        headerPanel.add(descLabel, BorderLayout.SOUTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
+        
+        // Stats cards container
+        JPanel statsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
+        statsPanel.setOpaque(false);
+        
         String[][] stats = {
             {"Total Tasks", "8"},
             {"Submitted Tasks", "5"},
             {"Pending Tasks", "3"},
-            {"Attendance", "85%"}
+            {"Attendance Rate", "85%"}
         };
         
         for (String[] stat : stats) {
-            JPanel card = new JPanel();
-            card.setLayout(new BorderLayout());
-            card.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+            JPanel card = new JPanel(new BorderLayout());
+            card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(220, 224, 230), 1),
+                BorderFactory.createEmptyBorder(15, 20, 15, 20)
+            ));
             card.setBackground(Color.WHITE);
             
             JLabel titleLabel = new JLabel(stat[0]);
-            titleLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-            titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            titleLabel.setForeground(Color.GRAY);
             
             JLabel valueLabel = new JLabel(stat[1]);
-            valueLabel.setFont(new Font("Arial", Font.BOLD, 24));
-            valueLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+            valueLabel.setForeground(new Color(30, 41, 59));
             
             card.add(titleLabel, BorderLayout.NORTH);
             card.add(valueLabel, BorderLayout.CENTER);
-            panel.add(card);
+            statsPanel.add(card);
         }
         
+        panel.add(statsPanel, BorderLayout.CENTER);
         return panel;
     }
     
     private JPanel createProfilePanel() {
         JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(new Color(220, 224, 230), 1),
+            BorderFactory.createEmptyBorder(40, 40, 40, 40)
+        ));
+        
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
         
         JLabel titleLabel = new JLabel("Profile Information");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
+        gbc.insets = new Insets(10, 10, 20, 10);
         panel.add(titleLabel, gbc);
         
         String[][] profileData = {
@@ -119,27 +100,27 @@ public class MenteeDashboard extends JFrame {
         };
         
         gbc.gridwidth = 1;
+        gbc.insets = new Insets(10, 10, 10, 10);
         for (int i = 0; i < profileData.length; i++) {
             gbc.gridx = 0;
             gbc.gridy = i + 1;
-            panel.add(new JLabel(profileData[i][0] + ":"), gbc);
+            JLabel label = new JLabel(profileData[i][0] + ":");
+            label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+            label.setForeground(Color.GRAY);
+            panel.add(label, gbc);
             
             gbc.gridx = 1;
             JLabel valueLabel = new JLabel(profileData[i][1]);
-            valueLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            valueLabel.setForeground(new Color(30, 41, 59));
             panel.add(valueLabel, gbc);
         }
         
-        return panel;
-    }
-    
-    private void logout() {
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to logout?", "Logout", 
-            JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            new LoginForm().setVisible(true);
-            dispose();
-        }
+        // Wrap in another panel to keep it centered
+        JPanel container = new JPanel(new GridBagLayout());
+        container.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+        container.add(panel);
+        
+        return container;
     }
 }
