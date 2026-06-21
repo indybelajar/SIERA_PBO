@@ -249,12 +249,6 @@ public class BaseLayout extends JFrame {
     }
     
     private void handleLogout() {
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Are you sure you want to logout?", "Logout", 
-            JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
-            new LoginForm().setVisible(true);
-            dispose();
-        }
+        Router.logout(this);
     }
 }

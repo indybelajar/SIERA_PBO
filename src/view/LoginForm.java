@@ -181,12 +181,7 @@ public class LoginForm extends JFrame {
                     "Login successful! Welcome, " + user.getName(), 
                     "Success", JOptionPane.INFORMATION_MESSAGE);
                 
-                if (user instanceof Mentor) {
-                    new MentorDashboard((Mentor) user).setVisible(true);
-                } else if (user instanceof Mentee) {
-                    new MenteeDashboard((Mentee) user).setVisible(true);
-                }
-                dispose();
+                Router.navigateToDashboard(LoginForm.this, user);
             } else {
                 JOptionPane.showMessageDialog(LoginForm.this, 
                     "Invalid email or password!", "Error", JOptionPane.ERROR_MESSAGE);
