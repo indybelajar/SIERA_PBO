@@ -5,7 +5,10 @@ import dao.UserDAO;
 import model.User;
 
 import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -19,17 +22,28 @@ public class GroupView extends JPanel {
     private UserDAO userDAO;
     
     private JLabel groupNameLabel;
-    private JPanel mentorPanel;
     private JLabel mentorNameLabel;
     private JLabel mentorJurusanLabel;
-    private JButton hubungiMentorButton;
+    private JPanel mentorPanel;
     
     private JTable memberTable;
     private DefaultTableModel memberTableModel;
     
     private User mentorUser;
     private List<User> menteesList;
+
+    private static final Color BG_PAGE    = new Color(0xF9, 0xFA, 0xFB);
+    private static final Color TEXT_DARK  = new Color(0x11, 0x18, 0x27);
+    private static final Color TEXT_MUTED = new Color(0x6B, 0x72, 0x80);
+    private static final Color CARD_BG    = Color.WHITE;
+    private static final Color BORDER_CLR = new Color(0xE5, 0xE7, 0xEB);
     
+    private static final Color GREEN_PRIMARY = new Color(0x05, 0x96, 0x69); 
+    private static final Color GREEN_LIGHT   = new Color(0xD1, 0xFA, 0xE5);
+    
+    private static final Color PILL_BG = new Color(0xE6, 0xF4, 0xEA);
+    private static final Color PILL_FG = new Color(0x1E, 0x8E, 0x3E);
+
     public GroupView(int groupId, User currentUser) {
         this.groupId = groupId;
         this.currentUser = currentUser;
@@ -42,141 +56,319 @@ public class GroupView extends JPanel {
     }
     
     private void initComponents() {
-        setLayout(new BorderLayout(15, 15));
-        setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
+        setLayout(new BorderLayout());
+        setBackground(BG_PAGE); 
+        setBorder(new EmptyBorder(30, 40, 30, 40));
         
-        // --- 1. TITLE PANEL ---
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        groupNameLabel = new JLabel("KELOMPOK");
-        groupNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titlePanel.add(groupNameLabel, BorderLayout.WEST);
+        JPanel topSection = new JPanel(new BorderLayout());
+        topSection.setOpaque(false);
+        topSection.setBorder(new EmptyBorder(0, 0, 30, 0));
         
-        JSeparator sep = new JSeparator();
-        sep.setForeground(Color.LIGHT_GRAY);
-        titlePanel.add(sep, BorderLayout.SOUTH);
-        add(titlePanel, BorderLayout.NORTH);
+        JPanel titleWrap = new JPanel(new GridLayout(2, 1, 0, 5));
+        titleWrap.setOpaque(false);
         
-        // --- 2. CENTER CONTENT PANEL ---
+        JPanel mainTitlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        mainTitlePanel.setOpaque(false);
+        groupNameLabel = new JLabel("Kelompok 82");
+        groupNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        groupNameLabel.setForeground(TEXT_DARK); 
+        
+        JLabel groupIcon = new JLabel("\uD83D\uDC65"); 
+        groupIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
+        groupIcon.setForeground(GREEN_PRIMARY);
+        
+        mainTitlePanel.add(groupNameLabel);
+        mainTitlePanel.add(groupIcon);
+        
+        JLabel subtitleLabel = new JLabel("Kelola informasi kelompok dan data mentee.");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        subtitleLabel.setForeground(TEXT_MUTED);
+        
+        titleWrap.add(mainTitlePanel);
+        titleWrap.add(subtitleLabel);
+        topSection.add(titleWrap, BorderLayout.WEST);
+        
+        JLabel bellIcon = new JLabel("\uD83D\uDD14");
+        bellIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        bellIcon.setForeground(TEXT_MUTED);
+        topSection.add(bellIcon, BorderLayout.EAST);
+        
+        add(topSection, BorderLayout.NORTH);
+        
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setOpaque(false);
         
-        // Mentor Section Header
-        JPanel mentorHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        mentorHeaderPanel.setOpaque(false);
-        JLabel mentorHeaderLabel = new JLabel("Mentor");
-        mentorHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        mentorHeaderLabel.setForeground(new Color(15, 23, 42));
-        mentorHeaderPanel.add(mentorHeaderLabel);
-        centerPanel.add(mentorHeaderPanel);
-        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(createSectionHeader("\uD83D\uDC64", "Mentor", null));
+        centerPanel.add(Box.createVerticalStrut(15));
         
-        // Mentor Box Panel (gray card)
-        mentorPanel = new JPanel(new BorderLayout(15, 10));
-        mentorPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
-            BorderFactory.createEmptyBorder(15, 20, 15, 20)
-        ));
-        mentorPanel.setBackground(new Color(230, 230, 230)); // light grey
-        mentorPanel.setMaximumSize(new Dimension(850, 75));
-        mentorPanel.setPreferredSize(new Dimension(850, 75));
-        mentorPanel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        mentorPanel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                navigateToMentorProfile();
-            }
-        });
+        mentorPanel = createRoundedCardPanel();
+        mentorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 20, 15));
         
-        JPanel mentorTextPanel = new JPanel(new GridLayout(2, 1, 2, 2));
+        JPanel mentorAvatar = createAvatarIcon();
+        JPanel mentorTextPanel = new JPanel(new GridLayout(2, 1, 0, 5));
         mentorTextPanel.setOpaque(false);
         
-        mentorNameLabel = new JLabel("Belum ada Mentor");
-        mentorNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        mentorNameLabel.setForeground(new Color(15, 23, 42));
+        mentorNameLabel = new JLabel("Zulfi Alisya");
+        mentorNameLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        mentorNameLabel.setForeground(TEXT_DARK);
         
-        mentorJurusanLabel = new JLabel("-");
-        mentorJurusanLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        mentorJurusanLabel.setForeground(Color.GRAY);
+        mentorJurusanLabel = new JLabel("S1 Sistem Informasi");
+        mentorJurusanLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        mentorJurusanLabel.setForeground(TEXT_MUTED);
         
         mentorTextPanel.add(mentorNameLabel);
         mentorTextPanel.add(mentorJurusanLabel);
-        mentorPanel.add(mentorTextPanel, BorderLayout.CENTER);
         
-        // If current user is a Mentee, add "Hubungi Mentor" button
-        if ("mentee".equalsIgnoreCase(currentUser.getRole())) {
-            hubungiMentorButton = new JButton("Hubungi Mentor");
-            hubungiMentorButton.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            hubungiMentorButton.setFocusPainted(false);
-            hubungiMentorButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            hubungiMentorButton.addActionListener(e -> navigateToMentorProfile());
-            
-            JPanel btnWrapper = new JPanel(new GridBagLayout());
-            btnWrapper.setOpaque(false);
-            btnWrapper.add(hubungiMentorButton);
-            mentorPanel.add(btnWrapper, BorderLayout.EAST);
-        }
+        mentorPanel.add(mentorAvatar);
+        mentorPanel.add(mentorTextPanel);
         
         centerPanel.add(mentorPanel);
-        centerPanel.add(Box.createVerticalStrut(25));
+        centerPanel.add(Box.createVerticalStrut(40));
         
-        // Mentees Section Header
-        JPanel menteesHeaderPanel = new JPanel(new BorderLayout());
-        menteesHeaderPanel.setOpaque(false);
-        JLabel menteesHeaderLabel = new JLabel("Mentees");
-        menteesHeaderLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        menteesHeaderLabel.setForeground(new Color(15, 23, 42));
-        menteesHeaderPanel.add(menteesHeaderLabel, BorderLayout.WEST);
+        JPanel menteesHeader = new JPanel(new BorderLayout());
+        menteesHeader.setOpaque(false);
+        menteesHeader.add(createSectionHeader("\uD83D\uDC65", "Mentees", "Daftar mentee dalam kelompok ini."), BorderLayout.WEST);
         
-        JSeparator sectionSep = new JSeparator();
-        sectionSep.setForeground(Color.LIGHT_GRAY);
-        menteesHeaderPanel.add(sectionSep, BorderLayout.SOUTH);
-        centerPanel.add(menteesHeaderPanel);
-        centerPanel.add(Box.createVerticalStrut(15));
-        
-        // Mentees Table
-        // Column mapping based on user role
-        String[] columns;
         if ("mentor".equalsIgnoreCase(currentUser.getRole())) {
-            columns = new String[]{"No.", "Nama", "NIM", "Jurusan", "Email", "Kontak"};
-        } else {
-            columns = new String[]{"No.", "Nama", "NIM", "Jurusan", "Email"};
+            JButton addBtn = makeGreenButton("+ Tambah Mentee");
+            menteesHeader.add(addBtn, BorderLayout.EAST);
         }
         
+        centerPanel.add(menteesHeader);
+        centerPanel.add(Box.createVerticalStrut(15));
+        
+        JPanel tableCardPanel = createRoundedCardPanel();
+        tableCardPanel.setLayout(new BorderLayout());
+        tableCardPanel.setBorder(BorderFactory.createLineBorder(BORDER_CLR, 1, true));
+        
+        String[] columns = {"No.", "Nama", "NIM", "Jurusan", "Email", "Kontak", "Aksi"};
         memberTableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            public boolean isCellEditable(int row, int column) { return false; }
         };
         
         memberTable = new JTable(memberTableModel);
-        memberTable.setRowHeight(30);
+        memberTable.setRowHeight(60); 
         memberTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        memberTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        memberTable.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        memberTable.setOpaque(true);
+        memberTable.setBackground(CARD_BG);
+        memberTable.setForeground(TEXT_DARK);
+        memberTable.setShowGrid(false); 
+        memberTable.setIntercellSpacing(new Dimension(0, 0));
+        memberTable.setFillsViewportHeight(true);
         
-        // Double-click or single-click row listener to navigate to profile
-        memberTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int selectedRow = memberTable.getSelectedRow();
-                if (selectedRow >= 0) {
-                    navigateToMenteeProfile(selectedRow);
-                }
-            }
-        });
+        setupTableRenderers();
         
         JScrollPane scrollPane = new JScrollPane(memberTable);
-        centerPanel.add(scrollPane);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setOpaque(true);
+        scrollPane.getViewport().setBackground(CARD_BG);
         
+        tableCardPanel.add(scrollPane, BorderLayout.CENTER);
+        centerPanel.add(tableCardPanel);
         add(centerPanel, BorderLayout.CENTER);
     }
     
+    private void setupTableRenderers() {
+        DefaultTableCellRenderer standardRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSel, boolean focus, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSel, focus, r, c);
+                lbl.setOpaque(true);
+                lbl.setBackground(CARD_BG);
+                lbl.setForeground(TEXT_DARK);
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
+                ));
+                return lbl;
+            }
+        };
+        
+        for (int i = 0; i < memberTable.getColumnCount(); i++) {
+            memberTable.getColumnModel().getColumn(i).setCellRenderer(standardRenderer);
+        }
+
+        memberTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+                panel.setBackground(CARD_BG);
+                panel.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+                
+                JPanel avatar = createAvatarIcon();
+                avatar.setPreferredSize(new Dimension(35, 35));
+                JLabel nameLbl = new JLabel(v != null ? v.toString() : "");
+                nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+                nameLbl.setForeground(TEXT_DARK);
+                
+                panel.add(avatar);
+                panel.add(nameLbl);
+                return panel;
+            }
+        });
+
+        memberTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JPanel wrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+                wrap.setBackground(CARD_BG);
+                wrap.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+                
+                JPanel pill = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 4)) {
+                    @Override
+                    protected void paintComponent(Graphics g) {
+                        Graphics2D g2 = (Graphics2D) g.create();
+                        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                        g2.setColor(PILL_BG);
+                        g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                        g2.dispose();
+                    }
+                };
+                pill.setOpaque(false);
+                JLabel txt = new JLabel(v != null ? v.toString() : "");
+                txt.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                txt.setForeground(PILL_FG);
+                pill.add(txt);
+                wrap.add(pill);
+                return wrap;
+            }
+        });
+
+        memberTable.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 15));
+                wrap.setBackground(CARD_BG);
+                wrap.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+                
+                JLabel dots = new JLabel("\u2807");
+                dots.setFont(new Font("Segoe UI", Font.BOLD, 18));
+                dots.setForeground(TEXT_MUTED);
+                dots.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER_CLR, 1),
+                    new EmptyBorder(2, 8, 2, 8)
+                ));
+                wrap.add(dots);
+                return wrap;
+            }
+        });
+
+        JTableHeader header = memberTable.getTableHeader();
+        header.setPreferredSize(new Dimension(100, 45));
+        header.setReorderingAllowed(false);
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setOpaque(true);
+                lbl.setBackground(BG_PAGE);
+                lbl.setForeground(TEXT_DARK);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
+                ));
+                return lbl;
+            }
+        };
+        for (int i = 0; i < memberTable.getColumnModel().getColumnCount(); i++) {
+            memberTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
+        }
+    }
+
+    private JPanel createSectionHeader(String iconUnicode, String title, String subtitle) {
+        JPanel wrapper = new JPanel(new GridLayout(subtitle != null ? 2 : 1, 1, 0, 2));
+        wrapper.setOpaque(false);
+        
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        titlePanel.setOpaque(false);
+        
+        JLabel icon = new JLabel(iconUnicode);
+        icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        icon.setForeground(GREEN_PRIMARY);
+        
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitle.setForeground(TEXT_DARK);
+        
+        titlePanel.add(icon);
+        titlePanel.add(lblTitle);
+        wrapper.add(titlePanel);
+        
+        if (subtitle != null) {
+            JPanel subPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+            subPanel.setOpaque(false);
+            JLabel lblSub = new JLabel(subtitle);
+            lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            lblSub.setForeground(TEXT_MUTED);
+            subPanel.add(lblSub);
+            wrapper.add(subPanel);
+        }
+        return wrapper;
+    }
+
+    private JPanel createAvatarIcon() {
+        JPanel iconCircle = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(BG_PAGE);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
+        iconCircle.setPreferredSize(new Dimension(50, 50));
+        iconCircle.setOpaque(false);
+        JLabel iconLbl = new JLabel("\uD83D\uDC68\uD83C\uDFFB\u200D\uD83E\uDDB1"); 
+        iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        iconCircle.add(iconLbl);
+        return iconCircle;
+    }
+
+    private JPanel createRoundedCardPanel() {
+        JPanel card = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(CARD_BG); 
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                g2.setColor(BORDER_CLR); 
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 12, 12);
+                g2.dispose();
+            }
+        };
+        card.setOpaque(false);
+        return card;
+    }
+
+    private JButton makeGreenButton(String text) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getModel().isRollover() ? new Color(0x04, 0x78, 0x57) : GREEN_PRIMARY); 
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setForeground(Color.WHITE);
+        btn.setOpaque(false);
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(150, 38));
+        return btn;
+    }
+
     private void loadGroupData() {
         String groupName = groupDAO.getGroupNameById(groupId);
-        groupNameLabel.setText(groupName.toUpperCase());
+        groupNameLabel.setText(groupName != null ? groupName : "Kelompok");
         
         memberTableModel.setRowCount(0);
         menteesList.clear();
@@ -191,82 +383,18 @@ public class GroupView extends JPanel {
             }
         }
         
-        // Populate Mentor Box
         if (mentorUser != null) {
             mentorNameLabel.setText(mentorUser.getName());
             String jurusan = (mentorUser.getJurusan() == null || mentorUser.getJurusan().trim().isEmpty())
                              ? "Jurusan belum diisi" : mentorUser.getJurusan();
             mentorJurusanLabel.setText(jurusan);
-        } else {
-            mentorNameLabel.setText("Belum ada Mentor");
-            mentorJurusanLabel.setText("-");
         }
         
-        // Populate Mentees Table
         int no = 1;
         for (User mentee : menteesList) {
-            String jurusan = (mentee.getJurusan() == null || mentee.getJurusan().trim().isEmpty())
-                             ? "-" : mentee.getJurusan();
-            String kontak = (mentee.getKontak() == null || mentee.getKontak().trim().isEmpty())
-                            ? "-" : mentee.getKontak();
-            
-            if ("mentor".equalsIgnoreCase(currentUser.getRole())) {
-                memberTableModel.addRow(new Object[]{
-                    no++,
-                    mentee.getName(),
-                    mentee.getId(), // NIM is represented by id
-                    jurusan,
-                    mentee.getEmail(),
-                    kontak
-                });
-            } else {
-                memberTableModel.addRow(new Object[]{
-                    no++,
-                    mentee.getName(),
-                    mentee.getId(), // NIM is represented by id
-                    jurusan,
-                    mentee.getEmail()
-                });
-            }
-        }
-    }
-    
-    private void navigateToMentorProfile() {
-        if (mentorUser == null) return;
-        
-        Window window = SwingUtilities.getWindowAncestor(this);
-        if (window instanceof BaseLayout) {
-            BaseLayout baseLayout = (BaseLayout) window;
-            // Retrieve full user profile
-            User fullMentor = userDAO.getUserById(mentorUser.getId());
-            if (fullMentor != null) {
-                // Keep the fields we loaded in GroupDAO
-                fullMentor.setJurusan(mentorUser.getJurusan());
-                fullMentor.setKontak(mentorUser.getKontak());
-                
-                // Show profile (read-only, with back button to Groups)
-                baseLayout.showTemporaryPage("Profile_" + fullMentor.getId(), 
-                    new ProfileView(fullMentor, false, "Groups"));
-            }
-        }
-    }
-    
-    private void navigateToMenteeProfile(int rowIndex) {
-        if (rowIndex < 0 || rowIndex >= menteesList.size()) return;
-        
-        User mentee = menteesList.get(rowIndex);
-        Window window = SwingUtilities.getWindowAncestor(this);
-        if (window instanceof BaseLayout) {
-            BaseLayout baseLayout = (BaseLayout) window;
-            
-            User fullMentee = userDAO.getUserById(mentee.getId());
-            if (fullMentee != null) {
-                fullMentee.setJurusan(mentee.getJurusan());
-                fullMentee.setKontak(mentee.getKontak());
-                
-                baseLayout.showTemporaryPage("Profile_" + fullMentee.getId(), 
-                    new ProfileView(fullMentee, false, "Groups"));
-            }
+            String jurusan = (mentee.getJurusan() == null || mentee.getJurusan().trim().isEmpty()) ? "-" : mentee.getJurusan();
+            String kontak = (mentee.getKontak() == null || mentee.getKontak().trim().isEmpty()) ? "-" : mentee.getKontak();
+            memberTableModel.addRow(new Object[]{no++, mentee.getName(), mentee.getId(), jurusan, mentee.getEmail(), kontak, ""});
         }
     }
 }

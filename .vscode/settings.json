@@ -4,5 +4,6 @@
     "java.project.referencedLibraries": [
         "lib/flatlaf-3.4.1.jar",
         "lib/mysql-connector-j-9.7.0.jar"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

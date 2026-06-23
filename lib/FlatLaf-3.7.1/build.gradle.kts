@@ -135,6 +135,8 @@ allprojects {
 
 			dependencies {
 				"errorprone"( libs.errorprone )
+				implementation(files("lib/flatlaf-3.4.1.jar"))
+				implementation(files("lib/mysql-connector-j-9.7.0.jar"))
 			}
 
 			tasks.withType<JavaCompile>().configureEach {
