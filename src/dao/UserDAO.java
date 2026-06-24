@@ -21,7 +21,7 @@ public class UserDAO {
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
-                int id = rs.getInt("id");
+                long id = rs.getLong("id");
                 String name = rs.getString("name");
                 String role = rs.getString("role");
                 int groupId = rs.getInt("group_id");
@@ -82,32 +82,33 @@ public class UserDAO {
             }
             
             // Insert user
-            String query = "INSERT INTO users (name, email, password, role, group_id) VALUES (?, ?, ?, ?, ?)";
-            int userId = 0;
-            try (PreparedStatement pstmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
-                pstmt.setString(1, user.getName());
-                pstmt.setString(2, user.getEmail());
-                pstmt.setString(3, user.getPassword());
-                pstmt.setString(4, user.getRole());
-                pstmt.setInt(5, groupId);
+            String email = user.getEmail();
+            long userId = 0;
+            try {
+                String prefix = email.split("@")[0];
+                userId = Long.parseLong(prefix);
+                user.setId(userId);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+
+            String query = "INSERT INTO users (id, name, email, password, role, group_id) VALUES (?, ?, ?, ?, ?, ?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                pstmt.setLong(1, user.getId());
+                pstmt.setString(2, user.getName());
+                pstmt.setString(3, user.getEmail());
+                pstmt.setString(4, user.getPassword());
+                pstmt.setString(5, user.getRole());
+                pstmt.setInt(6, groupId);
                 
-                int affectedRows = pstmt.executeUpdate();
-                if (affectedRows > 0) {
-                    try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
-                        if (generatedKeys.next()) {
-                            userId = generatedKeys.getInt(1);
-                            user.setId(userId);
-                            user.setGroupId(groupId);
-                        }
-                    }
-                }
+                pstmt.executeUpdate();
             }
             
             if (userId > 0) {
                 // Insert an empty profile row associated with this user
                 String profileQuery = "INSERT INTO user_profiles (user_id) VALUES (?)";
                 try (PreparedStatement profilePstmt = conn.prepareStatement(profileQuery)) {
-                    profilePstmt.setInt(1, userId);
+                    profilePstmt.setLong(1, userId);
                     profilePstmt.executeUpdate();
                 }
             }
@@ -159,7 +160,7 @@ public class UserDAO {
             
             while (rs.next()) {
                 User user = new User();
-                user.setId(rs.getInt("id"));
+                user.setId(rs.getLong("id"));
                 user.setName(rs.getString("name"));
                 user.setEmail(rs.getString("email"));
                 user.setPassword(rs.getString("password"));
@@ -173,17 +174,17 @@ public class UserDAO {
         return users;
     }
     
-    public User getUserById(int id) {
+    public User getUserById(long id) {
         String query = "SELECT * FROM users WHERE id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setInt(1, id);
+            pstmt.setLong(1, id);
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 User user = new User();
-                user.setId(rs.getInt("id"));
+                user.setId(rs.getLong("id"));
                 user.setName(rs.getString("name"));
                 user.setEmail(rs.getString("email"));
                 user.setRole(rs.getString("role"));

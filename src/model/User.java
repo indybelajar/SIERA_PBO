@@ -1,7 +1,7 @@
 package model;
 
 public class User {
-    private int id;
+    private long id;
     private String name;
     private String email;
     private String password;
@@ -12,7 +12,7 @@ public class User {
     
     public User() {}
     
-    public User(int id, String name, String email, String password, String role) {
+    public User(long id, String name, String email, String password, String role) {
         this.id = id;
         this.name = name;
         this.email = email;
@@ -21,8 +21,8 @@ public class User {
     }
     
     // Getters and Setters
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public long getId() { return id; }
+    public void setId(long id) { this.id = id; }
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

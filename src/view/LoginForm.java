@@ -178,7 +178,7 @@ public class LoginForm extends JFrame {
             }
         };
         card.setOpaque(false);
-        card.setPreferredSize(new Dimension(440, 340));
+        card.setPreferredSize(new Dimension(440, 360));
         card.setBorder(BorderFactory.createEmptyBorder(32, 40, 32, 40));
 
         GridBagConstraints c = new GridBagConstraints();
@@ -196,9 +196,23 @@ public class LoginForm extends JFrame {
         // Email
         c.gridy = 1; c.insets = new Insets(0, 0, 4, 0);
         card.add(fieldLabel("Email"), c);
-        emailField = styledTextField(20);
+        
+        JPanel emailRow = new JPanel(new BorderLayout(0, 0));
+        emailRow.setOpaque(false);
+        emailField = styledTextField(10);
+        JLabel domain = new JLabel("  @mahasiswa.upnvj.ac.id  ");
+        domain.setFont(new Font("Segoe UI", Font.ITALIC, 11));
+        domain.setForeground(TEXT_MUTED);
+        domain.setOpaque(true);
+        domain.setBackground(new Color(240, 248, 240));
+        domain.setBorder(BorderFactory.createCompoundBorder(
+            new MatteBorder(1, 0, 1, 1, BORDER_COLOR),
+            BorderFactory.createEmptyBorder(8, 4, 8, 8)));
+        emailRow.add(emailField, BorderLayout.CENTER);
+        emailRow.add(domain, BorderLayout.EAST);
+        
         c.gridy = 2; c.insets = new Insets(0, 0, 14, 0);
-        card.add(emailField, c);
+        card.add(emailRow, c);
 
         // Password
         c.gridy = 3; c.insets = new Insets(0, 0, 4, 0);
@@ -438,16 +452,20 @@ public class LoginForm extends JFrame {
     // ════════════════════════════════════════════════════════════════════════
     private class LoginAction implements ActionListener {
         @Override public void actionPerformed(ActionEvent e) {
-            String email    = emailField.getText().trim();
+            String uname    = emailField.getText().trim();
             String password = new String(passwordField.getPassword());
-            if (email.isEmpty() || password.isEmpty()) {
+            if (uname.isEmpty() || password.isEmpty()) {
                 err("Harap isi semua kolom!"); return;
             }
+            if (uname.contains("@")) {
+                uname = uname.split("@")[0];
+            }
+            String email = uname + "@mahasiswa.upnvj.ac.id";
             User user = userDAO.login(email, password);
             if (user != null) {
-                JOptionPane.showMessageDialog(LoginForm.this,
+                ModernDialog.showInfo(LoginForm.this,
                     "Login berhasil! Selamat datang, " + user.getName(),
-                    "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                    "Berhasil");
                 Router.navigateToDashboard(LoginForm.this, user);
             } else {
                 err("Email atau password salah!");
@@ -477,13 +495,13 @@ public class LoginForm extends JFrame {
                 ? new Mentor(0, name, email, pass)
                 : new Mentee(0, name, email, pass);
             if (userDAO.registerUser(user, group)) {
-                JOptionPane.showMessageDialog(LoginForm.this,
+                ModernDialog.showInfo(LoginForm.this,
                     "Pendaftaran berhasil! Silakan login.",
-                    "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                    "Berhasil");
                 regNameField.setText(""); regEmailField.setText("");
                 regPasswordField.setText(""); regGroupField.setText("");
                 formCardLayout.show(cardsPanel, "login");
-                emailField.setText(email);
+                emailField.setText(uname);
             } else {
                 err("Pendaftaran gagal. Silakan coba lagi.");
             }
@@ -491,6 +509,6 @@ public class LoginForm extends JFrame {
     }
 
     private void err(String msg) {
-        JOptionPane.showMessageDialog(this, msg, "Kesalahan", JOptionPane.ERROR_MESSAGE);
+        ModernDialog.showError(this, msg, "Kesalahan");
     }
 }

@@ -7,17 +7,17 @@ import java.sql.*;
 
 public class UserProfileDAO {
     
-    public UserProfile getProfileByUserId(int userId) {
+    public UserProfile getProfileByUserId(long userId) {
         String query = "SELECT * FROM user_profiles WHERE user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setInt(1, userId);
+            pstmt.setLong(1, userId);
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 return new UserProfile(
-                    rs.getInt("user_id"),
+                    rs.getLong("user_id"),
                     rs.getString("jurusan"),
                     rs.getString("fakultas"),
                     rs.getString("kontak"),
@@ -42,7 +42,7 @@ public class UserProfileDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
             
-            checkStmt.setInt(1, profile.getUserId());
+            checkStmt.setLong(1, profile.getUserId());
             ResultSet rs = checkStmt.executeQuery();
             
             if (rs.next()) {
@@ -61,7 +61,7 @@ public class UserProfileDAO {
                     pstmt.setString(8, profile.getXHandle());
                     pstmt.setString(9, profile.getYoutubeUrl());
                     pstmt.setString(10, profile.getOtherSocial());
-                    pstmt.setInt(11, profile.getUserId());
+                    pstmt.setLong(11, profile.getUserId());
                     return pstmt.executeUpdate() > 0;
                 }
             } else {
@@ -70,7 +70,7 @@ public class UserProfileDAO {
                                      "linkedin_url, instagram_handle, tiktok_handle, x_handle, youtube_url, other_social) " +
                                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 try (PreparedStatement pstmt = conn.prepareStatement(insertQuery)) {
-                    pstmt.setInt(1, profile.getUserId());
+                    pstmt.setLong(1, profile.getUserId());
                     pstmt.setString(2, profile.getJurusan());
                     pstmt.setString(3, profile.getFakultas());
                     pstmt.setString(4, profile.getKontak());

@@ -5,7 +5,7 @@ public class Mentee extends User {
         super();
     }
     
-    public Mentee(int id, String name, String email, String password) {
+    public Mentee(long id, String name, String email, String password) {
         super(id, name, email, password, "mentee");
     }
     

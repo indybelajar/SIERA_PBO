@@ -10,8 +10,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -125,10 +124,7 @@ public class GroupView extends JPanel {
         menteesHeader.setOpaque(false);
         menteesHeader.add(createSectionHeader("\uD83D\uDC65", "Mentees", "Daftar mentee dalam kelompok ini."), BorderLayout.WEST);
         
-        if ("mentor".equalsIgnoreCase(currentUser.getRole())) {
-            JButton addBtn = makeGreenButton("+ Tambah Mentee");
-            menteesHeader.add(addBtn, BorderLayout.EAST);
-        }
+        // Button tambah mentee removed per user request
         
         centerPanel.add(menteesHeader);
         centerPanel.add(Box.createVerticalStrut(15));
@@ -150,6 +146,8 @@ public class GroupView extends JPanel {
         memberTable.setOpaque(true);
         memberTable.setBackground(CARD_BG);
         memberTable.setForeground(TEXT_DARK);
+        memberTable.setSelectionBackground(BaseLayout.GREEN_LIGHT);
+        memberTable.setSelectionForeground(TEXT_DARK);
         
         // MENGAKTIFKAN GRID AGAR TABEL RAPI KOTAK-KOTAK
         memberTable.setShowGrid(true); 
@@ -167,17 +165,47 @@ public class GroupView extends JPanel {
         tableCardPanel.add(scrollPane, BorderLayout.CENTER);
         centerPanel.add(tableCardPanel);
         add(centerPanel, BorderLayout.CENTER);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = getWidth();
+                int side = Math.max(40, (w - 920) / 2);
+                setBorder(new EmptyBorder(30, side, 30, side));
+                revalidate();
+            }
+        });
     }
     
     private void setupTableRenderers() {
+        // Preferred column widths
+        int[] widths = {50, 220, 100, 180, 220, 150};
+        for (int i = 0; i < widths.length; i++) {
+            if (i < memberTable.getColumnCount()) {
+                memberTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+            }
+        }
+        memberTable.getColumnModel().getColumn(0).setMaxWidth(60);
+        memberTable.getColumnModel().getColumn(2).setMaxWidth(120);
+
         DefaultTableCellRenderer standardRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSel, boolean focus, int r, int c) {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSel, focus, r, c);
                 lbl.setOpaque(true);
-                lbl.setBackground(CARD_BG);
-                lbl.setForeground(TEXT_DARK);
+                if (isSel) {
+                    lbl.setBackground(table.getSelectionBackground());
+                    lbl.setForeground(table.getSelectionForeground());
+                } else {
+                    lbl.setBackground(CARD_BG);
+                    lbl.setForeground(TEXT_DARK);
+                }
                 lbl.setBorder(new EmptyBorder(0, 15, 0, 15));
+                if (c == 0 || c == 2) {
+                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                }
                 return lbl;
             }
         };
@@ -186,29 +214,13 @@ public class GroupView extends JPanel {
             memberTable.getColumnModel().getColumn(i).setCellRenderer(standardRenderer);
         }
 
-        memberTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
-                panel.setBackground(CARD_BG);
-                
-                JPanel avatar = createAvatarIcon();
-                avatar.setPreferredSize(new Dimension(35, 35));
-                JLabel nameLbl = new JLabel(v != null ? v.toString() : "");
-                nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                nameLbl.setForeground(TEXT_DARK);
-                
-                panel.add(avatar);
-                panel.add(nameLbl);
-                return panel;
-            }
-        });
+        // Column 1 (Nama) now uses the standard cell renderer, showing text only
 
         memberTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
                 JPanel wrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-                wrap.setBackground(CARD_BG);
+                wrap.setBackground(s ? t.getSelectionBackground() : CARD_BG);
                 
                 JPanel pill = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 4)) {
                     @Override
@@ -223,7 +235,6 @@ public class GroupView extends JPanel {
                 pill.setOpaque(false);
                 JLabel txt = new JLabel(v != null ? v.toString() : "");
                 txt.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                // FIX KONSISTENSI: Ubah ke GREEN_PRIMARY agar sama dengan Dashboard
                 txt.setForeground(BaseLayout.GREEN_PRIMARY);
                 pill.add(txt);
                 wrap.add(pill);
@@ -245,6 +256,11 @@ public class GroupView extends JPanel {
                 lbl.setBorder(BorderFactory.createCompoundBorder(
                     new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
                 ));
+                if (c == 0 || c == 2) {
+                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                }
                 return lbl;
             }
         };

@@ -8,10 +8,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import dao.GroupDAO;
 
 public class BaseLayout extends JFrame {
     private String userName;
     private String userRole;
+    private int groupId;
 
     protected JPanel sidebarPanel;
     private JPanel menuContainer;
@@ -44,9 +46,10 @@ public class BaseLayout extends JFrame {
     private static final Color LOGO_ICON_BG    = new Color(20,  110, 56);
     private static final Color TRANSPARENT     = new Color(0,   0,   0,  0);
 
-    public BaseLayout(String frameTitle, String userName, String userRole) {
+    public BaseLayout(String frameTitle, String userName, String userRole, int groupId) {
         this.userName = userName;
         this.userRole = userRole;
+        this.groupId = groupId;
         this.menuButtons = new ArrayList<>();
         this.pageMap = new LinkedHashMap<>();
 
@@ -120,7 +123,7 @@ public class BaseLayout extends JFrame {
         JLabel sub1 = new JLabel("SISTEM INFORMASI");
         sub1.setFont(new Font("Segoe UI", Font.PLAIN, 9));
         sub1.setForeground(TEXT_WHITE_MUTED);
-        JLabel sub2 = new JLabel("MENTORING");
+        JLabel sub2 = new JLabel("PATRIBERA");
         sub2.setFont(new Font("Segoe UI", Font.PLAIN, 9));
         sub2.setForeground(TEXT_WHITE_MUTED);
         subLines.add(sub1);
@@ -158,8 +161,7 @@ public class BaseLayout extends JFrame {
         avatar.setMinimumSize(new Dimension(48, 48));
         avatar.setMaximumSize(new Dimension(48, 48));
         avatar.setOpaque(false);
-        JLabel avatarIcon = new JLabel("\uD83D\uDC64");
-        avatarIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        JLabel avatarIcon = new JLabel(new SvgIcon(SvgIcon.Type.USER, 20, new Color(120, 80, 40)));
         avatar.add(avatarIcon);
 
         // Profile text
@@ -188,7 +190,8 @@ public class BaseLayout extends JFrame {
         roleLabel.setOpaque(false);
         roleLabel.setBorder(new EmptyBorder(2, 7, 2, 7));
 
-        JLabel groupLabel = new JLabel("Kelompok 07");
+        String groupName = new GroupDAO().getGroupNameById(this.groupId);
+        JLabel groupLabel = new JLabel(groupName);
         groupLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
         groupLabel.setForeground(TEXT_WHITE_MUTED);
 
@@ -347,8 +350,13 @@ public class BaseLayout extends JFrame {
         iconCircle.setPreferredSize(new Dimension(28, 28));
         iconCircle.setMinimumSize(new Dimension(28, 28));
         iconCircle.setMaximumSize(new Dimension(28, 28));
-        JLabel iconLbl = new JLabel(icon);
-        iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        JLabel iconLbl;
+        if ("Profile".equalsIgnoreCase(label)) {
+            iconLbl = new JLabel(new SvgIcon(SvgIcon.Type.USER, 16));
+        } else {
+            iconLbl = new JLabel(icon);
+            iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
+        }
         iconLbl.setForeground(MENU_TEXT_INACTIVE);
         iconCircle.add(iconLbl);
 

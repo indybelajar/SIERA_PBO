@@ -41,6 +41,9 @@ public class ProfileView extends JPanel {
     private JTextField tiktokField;
     private JTextField xField;
     private JTextField linkedinField;
+    private JButton editBtn;
+    private JPanel bottomBarPanel;
+    private JPanel bodyPanel;
 
     // ── Constructor ───────────────────────────────────────────────────
     public ProfileView(User user, boolean canEdit, String backPage) {
@@ -53,11 +56,24 @@ public class ProfileView extends JPanel {
         setBackground(BG_PAGE);
 
         add(createTopBar(),  BorderLayout.NORTH);
-        add(createBody(),    BorderLayout.CENTER);
-        add(createBottomBar(), BorderLayout.SOUTH);
+        bodyPanel = createBody();
+        add(bodyPanel,    BorderLayout.CENTER);
+        bottomBarPanel = createBottomBar();
+        add(bottomBarPanel, BorderLayout.SOUTH);
 
         loadProfileData();
         setEditMode(false);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                bodyPanel.setBorder(new EmptyBorder(24, side, 0, side));
+                bottomBarPanel.setBorder(new EmptyBorder(12, side, 12, side));
+                revalidate();
+            }
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -139,11 +155,13 @@ public class ProfileView extends JPanel {
         twoCol.setOpaque(false);
         twoCol.add(createInfoDasarCard());
         twoCol.add(createMediaSosialCard());
+        twoCol.setMaximumSize(new Dimension(Integer.MAX_VALUE, twoCol.getPreferredSize().height));
         inner.add(twoCol);
         inner.add(Box.createVerticalStrut(16));
 
         inner.add(createDetailAkunCard());
         inner.add(Box.createVerticalStrut(8));
+        inner.add(Box.createVerticalGlue());
 
         JScrollPane scroll = new JScrollPane(inner);
         scroll.setBorder(null);
@@ -185,7 +203,7 @@ public class ProfileView extends JPanel {
             }
         };
         avatarCircle.setOpaque(false);
-        avatarCircle.setBounds(0, 0, 90, 90);
+        avatarCircle.setBounds(5, 5, 90, 90);
         String initial = user.getName().isEmpty() ? "?" :
                          String.valueOf(Character.toUpperCase(user.getName().charAt(0)));
         JLabel initLbl = new JLabel(initial);
@@ -193,28 +211,7 @@ public class ProfileView extends JPanel {
         initLbl.setForeground(GREEN_PRIMARY);
         avatarCircle.add(initLbl);
 
-        // Camera icon badge (bottom-right of avatar)
-        JPanel camBadge = new JPanel(new GridBagLayout()) {
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(CARD_BG);
-                g2.fillOval(0, 0, getWidth(), getHeight());
-                g2.setColor(BORDER_CLR);
-                g2.setStroke(new BasicStroke(1.5f));
-                g2.drawOval(1, 1, getWidth() - 2, getHeight() - 2);
-                g2.dispose();
-                super.paintComponent(g);
-            }
-        };
-        camBadge.setOpaque(false);
-        camBadge.setBounds(62, 62, 28, 28);
-        JLabel camLbl = new JLabel("\uD83D\uDCF7"); // 📷
-        camLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 12));
-        camBadge.add(camLbl);
-
         avatarArea.add(avatarCircle);
-        avatarArea.add(camBadge);
 
         // ---- Info panel ----
         JPanel info = new JPanel(new BorderLayout(0, 8));
@@ -263,21 +260,22 @@ public class ProfileView extends JPanel {
         info.add(top, BorderLayout.CENTER);
 
         // ---- Edit Profil button (top-right) ----
-        JButton editBtn = buildOutlineButton("\u270F  Edit Profil"); // ✏
-        editBtn.addActionListener(e -> {
-            if (!isEditMode) {
-                setEditMode(true);
-                editBtn.setText("✖  Batal");
-            } else {
-                setEditMode(false);
-                editBtn.setText("\u270F  Edit Profil");
-                loadProfileData(); // revert
-            }
-        });
+        editBtn = buildOutlineButton("  Edit Profil");
+        editBtn.setIcon(new SvgIcon(SvgIcon.Type.USER, 14, GREEN_PRIMARY));
+        editBtn.setIconTextGap(8);
+        editBtn.addActionListener(e -> setEditMode(true));
+
+        JPanel btnPanel = new JPanel(new GridBagLayout());
+        btnPanel.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.anchor = GridBagConstraints.CENTER;
+        btnPanel.add(editBtn, gbc);
 
         card.add(avatarArea, BorderLayout.WEST);
         card.add(info,       BorderLayout.CENTER);
-        card.add(editBtn,    BorderLayout.EAST);
+        card.add(btnPanel,   BorderLayout.EAST);
         return card;
     }
 
@@ -328,13 +326,13 @@ public class ProfileView extends JPanel {
         xField         = new JTextField();
         linkedinField  = new JTextField();
 
-        rows.add(buildSocialRow("\uD83D\uDCF7", "Instagram",  instagramField)); // 📷
+        rows.add(buildSocialRow(new SvgIcon(SvgIcon.Type.INSTAGRAM, 14, GREEN_PRIMARY), "Instagram",  instagramField));
         rows.add(buildDivider());
-        rows.add(buildSocialRow("\uD83C\uDFB5", "TikTok",     tiktokField));   // 🎵
+        rows.add(buildSocialRow(new SvgIcon(SvgIcon.Type.TIKTOK, 14, GREEN_PRIMARY), "TikTok",     tiktokField));
         rows.add(buildDivider());
-        rows.add(buildSocialRow("𝕏",           "X (Twitter)", xField));
+        rows.add(buildSocialRow(new SvgIcon(SvgIcon.Type.X, 14, GREEN_PRIMARY), "X (Twitter)", xField));
         rows.add(buildDivider());
-        rows.add(buildSocialRow("\uD83D\uDCBC", "LinkedIn",   linkedinField)); // 💼
+        rows.add(buildSocialRow(new SvgIcon(SvgIcon.Type.LINKEDIN, 14, GREEN_PRIMARY), "LinkedIn",   linkedinField));
 
         card.add(rows, BorderLayout.CENTER);
         return card;
@@ -375,14 +373,25 @@ public class ProfileView extends JPanel {
     //  BOTTOM BAR  (Save Changes)
     // ══════════════════════════════════════════════════════════════════
     private JPanel createBottomBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 28, 12));
-        bar.setOpaque(false);
+        bottomBarPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 14, 12));
+        bottomBarPanel.setOpaque(false);
 
-        JButton saveBtn = buildGreenButton("\uD83D\uDCBE  Save Changes"); // 💾
+        JButton cancelBtn = buildOutlineButton("Batal");
+        cancelBtn.setPreferredSize(new Dimension(100, 40));
+        cancelBtn.addActionListener(e -> {
+            setEditMode(false);
+            loadProfileData(); // revert
+        });
+
+        JButton saveBtn = buildGreenButton("Save Changes");
+        saveBtn.setIcon(new SvgIcon(SvgIcon.Type.SAVE, 16, Color.WHITE));
+        saveBtn.setIconTextGap(8);
         saveBtn.setPreferredSize(new Dimension(160, 40));
         saveBtn.addActionListener(e -> saveProfile());
-        bar.add(saveBtn);
-        return bar;
+
+        bottomBarPanel.add(cancelBtn);
+        bottomBarPanel.add(saveBtn);
+        return bottomBarPanel;
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -415,13 +424,20 @@ public class ProfileView extends JPanel {
                 ? new CompoundBorder(new LineBorder(GREEN_PRIMARY, 1, true), new EmptyBorder(4, 8, 4, 8))
                 : BorderFactory.createEmptyBorder(4, 0, 4, 0));
         }
+        if (editBtn != null) {
+            editBtn.setVisible(!edit);
+        }
+        if (bottomBarPanel != null) {
+            bottomBarPanel.setVisible(edit);
+            revalidate();
+            repaint();
+        }
     }
 
     private void saveProfile() {
         if (!isEditMode) {
-            JOptionPane.showMessageDialog(this,
-                "Klik 'Edit Profil' terlebih dahulu untuk mengubah data.", "Info",
-                JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showInfo(this,
+                "Klik 'Edit Profil' terlebih dahulu untuk mengubah data.", "Info");
             return;
         }
         userProfile.setJurusan(jurusanField.getText().trim());
@@ -433,13 +449,11 @@ public class ProfileView extends JPanel {
         userProfile.setLinkedinUrl(linkedinField.getText().trim());
 
         if (profileDAO.saveOrUpdateProfile(userProfile)) {
-            JOptionPane.showMessageDialog(this, "Profil berhasil disimpan!", "Sukses",
-                JOptionPane.INFORMATION_MESSAGE);
             setEditMode(false);
             loadProfileData();
+            ModernDialog.showInfo(this, "Profil berhasil disimpan!", "Sukses");
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal menyimpan profil.", "Error",
-                JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Gagal menyimpan profil.", "Error");
         }
     }
 
@@ -488,7 +502,7 @@ public class ProfileView extends JPanel {
     }
 
     /** Row: icon | platform label | editable field | external link icon (for Media Sosial) */
-    private JPanel buildSocialRow(String emoji, String platform, JTextField field) {
+    private JPanel buildSocialRow(Icon icon, String platform, JTextField field) {
         JPanel row = new JPanel(new BorderLayout(12, 0));
         row.setOpaque(false);
         row.setBorder(new EmptyBorder(10, 0, 10, 0));
@@ -497,7 +511,7 @@ public class ProfileView extends JPanel {
         left.setOpaque(false);
         left.setPreferredSize(new Dimension(160, 30));
 
-        JPanel circle = buildIconCircle(emoji, 28);
+        JPanel circle = buildIconCircle(icon, 28);
         JLabel lbl = new JLabel(platform);
         lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lbl.setForeground(TEXT_MUTED);
@@ -590,6 +604,25 @@ public class ProfileView extends JPanel {
         circle.setMaximumSize(new Dimension(size, size));
         JLabel lbl = new JLabel(emoji);
         lbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, size / 2));
+        circle.add(lbl);
+        return circle;
+    }
+
+    private JPanel buildIconCircle(Icon icon, int size) {
+        JPanel circle = new JPanel(new GridBagLayout()) {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(GREEN_LIGHT);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        circle.setOpaque(false);
+        circle.setPreferredSize(new Dimension(size, size));
+        circle.setMaximumSize(new Dimension(size, size));
+        JLabel lbl = new JLabel(icon);
         circle.add(lbl);
         return circle;
     }

@@ -43,7 +43,7 @@ public class GroupDAO {
             
             while (rs.next()) {
                 User user = new User();
-                user.setId(rs.getInt("id"));
+                user.setId(rs.getLong("id"));
                 user.setName(rs.getString("name"));
                 user.setEmail(rs.getString("email"));
                 user.setRole(rs.getString("role"));
@@ -58,14 +58,14 @@ public class GroupDAO {
         return members;
     }
     
-    public Group getGroupByUserId(int userId) {
+    public Group getGroupByUserId(long userId) {
         String query = "SELECT g.* FROM groups g " +
                       "JOIN users u ON g.id = u.group_id " +
                       "WHERE u.id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setInt(1, userId);
+            pstmt.setLong(1, userId);
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {

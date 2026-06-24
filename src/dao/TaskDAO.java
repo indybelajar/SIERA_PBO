@@ -24,7 +24,7 @@ public class TaskDAO {
                 pstmt.setInt(1, task.getGroupId());
                 pstmt.setString(2, task.getTitle());
                 pstmt.setString(3, task.getDescription());
-                pstmt.setTimestamp(4, new java.sql.Timestamp(task.getDeadline().getTime()));
+                pstmt.setTimestamp(4, task.getDeadline());
                 
                 int affected = pstmt.executeUpdate();
                 if (affected > 0) {
@@ -40,12 +40,12 @@ public class TaskDAO {
             if (taskId > 0) {
                 // Get all mentees in the group
                 String menteeQuery = "SELECT id FROM users WHERE group_id = ? AND role = 'mentee'";
-                List<Integer> menteeIds = new ArrayList<>();
+                List<Long> menteeIds = new ArrayList<>();
                 try (PreparedStatement menteeStmt = conn.prepareStatement(menteeQuery)) {
                     menteeStmt.setInt(1, task.getGroupId());
                     try (ResultSet rs = menteeStmt.executeQuery()) {
                         while (rs.next()) {
-                            menteeIds.add(rs.getInt("id"));
+                            menteeIds.add(rs.getLong("id"));
                         }
                     }
                 }
@@ -53,12 +53,14 @@ public class TaskDAO {
                 // Create a 'Pending' submission entry for each mentee
                 String subQuery = "INSERT INTO task_submissions (task_id, user_id, status) VALUES (?, ?, 'Pending')";
                 try (PreparedStatement subStmt = conn.prepareStatement(subQuery)) {
-                    for (int menteeId : menteeIds) {
+                    for (long menteeId : menteeIds) {
                         subStmt.setInt(1, taskId);
-                        subStmt.setInt(2, menteeId);
+                        subStmt.setLong(2, menteeId);
                         subStmt.addBatch();
                     }
-                    subStmt.executeBatch();
+                    if (!menteeIds.isEmpty()) {
+                        subStmt.executeBatch();
+                    }
                 }
             }
             
@@ -99,7 +101,7 @@ public class TaskDAO {
                 task.setGroupId(rs.getInt("group_id"));
                 task.setTitle(rs.getString("title"));
                 task.setDescription(rs.getString("description"));
-                task.setDeadline(rs.getDate("deadline"));
+                task.setDeadline(rs.getTimestamp("deadline"));
                 tasks.add(task);
             }
         } catch (SQLException e) {
@@ -123,7 +125,7 @@ public class TaskDAO {
                 task.setGroupId(rs.getInt("group_id"));
                 task.setTitle(rs.getString("title"));
                 task.setDescription(rs.getString("description"));
-                task.setDeadline(rs.getDate("deadline"));
+                task.setDeadline(rs.getTimestamp("deadline"));
                 tasks.add(task);
             }
         } catch (SQLException e) {
@@ -148,7 +150,7 @@ public class TaskDAO {
                 list.add(new TaskSubmission(
                     rs.getInt("id"),
                     rs.getInt("task_id"),
-                    rs.getInt("user_id"),
+                    rs.getLong("user_id"),
                     rs.getString("user_name"),
                     rs.getString("submission_link"),
                     rs.getString("status"),
@@ -161,14 +163,14 @@ public class TaskDAO {
         return list;
     }
     
-    public boolean updateSubmissionStatus(int taskId, int userId, String status) {
+    public boolean updateSubmissionStatus(int taskId, long userId, String status) {
         String query = "UPDATE task_submissions SET status = ? WHERE task_id = ? AND user_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setString(1, status);
             pstmt.setInt(2, taskId);
-            pstmt.setInt(3, userId);
+            pstmt.setLong(3, userId);
             
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -177,7 +179,7 @@ public class TaskDAO {
         }
     }
     
-    public TaskSubmission getSubmissionByTaskAndUser(int taskId, int userId) {
+    public TaskSubmission getSubmissionByTaskAndUser(int taskId, long userId) {
         String query = "SELECT ts.id, ts.task_id, ts.user_id, u.name as user_name, ts.submission_link, ts.status, ts.submitted_at " +
                       "FROM task_submissions ts " +
                       "JOIN users u ON ts.user_id = u.id " +
@@ -186,14 +188,14 @@ public class TaskDAO {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setInt(1, taskId);
-            pstmt.setInt(2, userId);
+            pstmt.setLong(2, userId);
             ResultSet rs = pstmt.executeQuery();
             
             if (rs.next()) {
                 return new TaskSubmission(
                     rs.getInt("id"),
                     rs.getInt("task_id"),
-                    rs.getInt("user_id"),
+                    rs.getLong("user_id"),
                     rs.getString("user_name"),
                     rs.getString("submission_link"),
                     rs.getString("status"),

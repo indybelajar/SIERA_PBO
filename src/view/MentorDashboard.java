@@ -8,6 +8,10 @@ import java.awt.event.*;
 
 public class MentorDashboard extends BaseLayout {
     private Mentor mentor;
+    private JLabel featuredTitleLabel;
+    private JLabel featuredSubLabel;
+    private JPanel announcementListContainer;
+    private JLabel announcementTitleLabel;
 
     // ── Brand colors (inherits GREEN_* from BaseLayout) ───────────────
     private static final Color BG_PAGE    = new Color(0xF4, 0xF6, 0xF8);
@@ -18,7 +22,7 @@ public class MentorDashboard extends BaseLayout {
     private static final Color RED_DOT    = new Color(0xEF, 0x44, 0x44);
 
     public MentorDashboard(Mentor mentor) {
-        super("Siera - Dashboard", mentor.getName(), "Mentor");
+        super("Siera - Dashboard", mentor.getName(), "Mentor", mentor.getGroupId());
         this.mentor = mentor;
 
         addMenuItem("Dashboard",  "🏠", createDashboardPanel());
@@ -71,6 +75,16 @@ public class MentorDashboard extends BaseLayout {
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         root.add(scroll, BorderLayout.CENTER);
 
+        scroll.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = scroll.getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                body.setBorder(new EmptyBorder(24, side, 24, side));
+                body.revalidate();
+            }
+        });
+
         // Save button bar
         root.add(createBottomBar(), BorderLayout.SOUTH);
         return root;
@@ -87,10 +101,15 @@ public class MentorDashboard extends BaseLayout {
 
         JPanel left = new JPanel(new BorderLayout(0, 3));
         left.setOpaque(false);
-        JLabel hello = new JLabel("Hello, " + mentor.getName() + " \uD83D\uDC4B");
+        JLabel hello = new JLabel("Hello, " + mentor.getName() + " ");
         hello.setFont(new Font("Segoe UI", Font.BOLD, 22));
         hello.setForeground(TEXT_DARK);
-        JLabel group = new JLabel("Kelompok 07");
+        hello.setIcon(new SvgIcon(SvgIcon.Type.GREETING, 20, GREEN_PRIMARY));
+        hello.setHorizontalTextPosition(SwingConstants.LEFT);
+        hello.setIconTextGap(6);
+
+        String groupName = new dao.GroupDAO().getGroupNameById(mentor.getGroupId());
+        JLabel group = new JLabel(groupName);
         group.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         group.setForeground(TEXT_MUTED);
         left.add(hello, BorderLayout.NORTH);
@@ -252,20 +271,20 @@ public class MentorDashboard extends BaseLayout {
         };
         starCircle.setOpaque(false);
         starCircle.setPreferredSize(new Dimension(42, 42));
-        JLabel starLbl = new JLabel("\u2B50");
+        JLabel starLbl = new JLabel("⭐");
         starLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 17));
         starCircle.add(starLbl);
 
         JPanel text = new JPanel(new BorderLayout(0, 4));
         text.setOpaque(false);
-        JLabel mainLbl = new JLabel("Do's and Don'ts Mentor PATRIBERA UPNVJ 2026");
-        mainLbl.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        mainLbl.setForeground(Color.WHITE);
-        JLabel subLbl = new JLabel("+2 pengumuman lainnya");
-        subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subLbl.setForeground(new Color(0xC8, 0xF0, 0xD8));
-        text.add(mainLbl, BorderLayout.NORTH);
-        text.add(subLbl,  BorderLayout.SOUTH);
+        featuredTitleLabel = new JLabel("Memuat...");
+        featuredTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        featuredTitleLabel.setForeground(Color.WHITE);
+        featuredSubLabel = new JLabel("");
+        featuredSubLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        featuredSubLabel.setForeground(new Color(0xC8, 0xF0, 0xD8));
+        text.add(featuredTitleLabel, BorderLayout.NORTH);
+        text.add(featuredSubLabel,  BorderLayout.SOUTH);
 
         JLabel chevron = new JLabel("›");
         chevron.setFont(new Font("Segoe UI", Font.BOLD, 26));
@@ -274,6 +293,16 @@ public class MentorDashboard extends BaseLayout {
         card.add(starCircle, BorderLayout.WEST);
         card.add(text,       BorderLayout.CENTER);
         card.add(chevron,    BorderLayout.EAST);
+
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                showAllAnnouncementsDialog();
+            }
+        });
+
+        refreshFeaturedAnnouncement();
         return card;
     }
 
@@ -297,40 +326,21 @@ public class MentorDashboard extends BaseLayout {
         JPanel cardHeader = new JPanel(new BorderLayout());
         cardHeader.setOpaque(false);
         cardHeader.setBorder(new EmptyBorder(16, 18, 10, 18));
-        JLabel titleLbl = new JLabel("Pengumuman (8)");
-        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        titleLbl.setForeground(TEXT_DARK);
-        cardHeader.add(titleLbl, BorderLayout.WEST);
+        
+        announcementTitleLabel = new JLabel("Pengumuman (0)");
+        announcementTitleLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        announcementTitleLabel.setForeground(TEXT_DARK);
+        cardHeader.add(announcementTitleLabel, BorderLayout.WEST);
 
-        // Items
-        String[][] items = {
-            {"Semangat untuk Hari Kedua,...",
-             "Terima kasih atas dedikasi kalian memantau kelompok hingga sore ini. Tetap semangat dan jangan lupa istirahat yang cukup!",
-             "Hari ini, 04.20"},
-            {"Cek Kondisi Kesehatan Kelompok",
-             "Mengingat cuaca yang cukup terik, pastikan mentee kalian cukup minum dan jaga kondisi kesehatan.",
-             "Kemarin, 10.30"},
-            {"Pantau Kelengkapan Atribut Mentee",
-             "Bapak ada pengecekan atribut untuk kegiatan esok hari. Pastikan semua mentee sudah lengkap.",
-             "15 Apr, 20.00"},
-            {"Upload Foto Dokumentasi Kelompok",
-             "Jangan lupa mengupload dokumentasi kegiatan hari ini di link yang sudah diberikan.",
-             "12 Apr, 17.30"},
-        };
+        JButton addBtn = makeGreenButton("+ Buat Pengumuman");
+        addBtn.setPreferredSize(new Dimension(160, 30));
+        addBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        addBtn.addActionListener(e -> showCreateAnnouncementDialog());
+        cardHeader.add(addBtn, BorderLayout.EAST);
 
-        JPanel listPanel = new JPanel();
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setOpaque(false);
-        for (int i = 0; i < items.length; i++) {
-            listPanel.add(createAnnouncementRow(items[i][0], items[i][1], items[i][2]));
-            if (i < items.length - 1) {
-                JPanel sep = new JPanel();
-                sep.setBackground(BORDER_CLR);
-                sep.setPreferredSize(new Dimension(0, 1));
-                sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-                listPanel.add(sep);
-            }
-        }
+        announcementListContainer = new JPanel();
+        announcementListContainer.setLayout(new BoxLayout(announcementListContainer, BoxLayout.Y_AXIS));
+        announcementListContainer.setOpaque(false);
 
         // Footer link
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 10));
@@ -340,12 +350,159 @@ public class MentorDashboard extends BaseLayout {
         seeAll.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         seeAll.setForeground(GREEN_PRIMARY);
         seeAll.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        seeAll.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                showAllAnnouncementsDialog();
+            }
+        });
         footer.add(seeAll);
 
         wrapper.add(cardHeader, BorderLayout.NORTH);
-        wrapper.add(listPanel,  BorderLayout.CENTER);
+        wrapper.add(announcementListContainer,  BorderLayout.CENTER);
         wrapper.add(footer,     BorderLayout.SOUTH);
+
+        loadAnnouncements();
         return wrapper;
+    }
+
+    private void loadAnnouncements() {
+        if (announcementListContainer == null) return;
+        announcementListContainer.removeAll();
+        java.util.List<model.Announcement> announcements = new dao.AnnouncementDAO().getAnnouncementsByGroupId(mentor.getGroupId());
+        
+        announcementTitleLabel.setText("Pengumuman (" + announcements.size() + ")");
+        
+        if (announcements.isEmpty()) {
+            JPanel emptyPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            emptyPanel.setOpaque(false);
+            JLabel emptyLbl = new JLabel("Belum ada pengumuman.");
+            emptyLbl.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+            emptyLbl.setForeground(TEXT_MUTED);
+            emptyPanel.add(emptyLbl);
+            announcementListContainer.add(emptyPanel);
+        } else {
+            // Show up to 4 announcements
+            int limit = Math.min(4, announcements.size());
+            for (int i = 0; i < limit; i++) {
+                model.Announcement ann = announcements.get(i);
+                announcementListContainer.add(createAnnouncementRow(ann.getTitle(), ann.getContent(), formatTimestamp(ann.getCreatedAt())));
+                if (i < limit - 1) {
+                    JPanel sep = new JPanel();
+                    sep.setBackground(BORDER_CLR);
+                    sep.setPreferredSize(new Dimension(0, 1));
+                    sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+                    announcementListContainer.add(sep);
+                }
+            }
+        }
+        announcementListContainer.revalidate();
+        announcementListContainer.repaint();
+    }
+
+    private void refreshFeaturedAnnouncement() {
+        if (featuredTitleLabel == null) return;
+        java.util.List<model.Announcement> announcements = new dao.AnnouncementDAO().getAnnouncementsByGroupId(mentor.getGroupId());
+        if (announcements.isEmpty()) {
+            featuredTitleLabel.setText("Belum ada pengumuman");
+            featuredSubLabel.setText("");
+        } else {
+            model.Announcement latest = announcements.get(0);
+            featuredTitleLabel.setText(latest.getTitle());
+            if (announcements.size() > 1) {
+                featuredSubLabel.setText("+" + (announcements.size() - 1) + " pengumuman lainnya");
+            } else {
+                featuredSubLabel.setText("Pengumuman terbaru");
+            }
+        }
+    }
+
+    private String formatTimestamp(java.sql.Timestamp ts) {
+        if (ts == null) return "";
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd MMM, HH.mm");
+        return sdf.format(ts);
+    }
+
+    private void showCreateAnnouncementDialog() {
+        JDialog dialog = new JDialog(this, "Buat Pengumuman Baru", true);
+        dialog.setSize(450, 350);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(new EmptyBorder(16, 16, 16, 16));
+        panel.setBackground(Color.WHITE);
+        
+        GridBagConstraints c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        c.gridx = 0;
+        
+        // Title Label
+        JLabel titleLbl = new JLabel("Judul Pengumuman");
+        titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        titleLbl.setForeground(TEXT_DARK);
+        c.gridy = 0; c.insets = new Insets(0, 0, 4, 0);
+        panel.add(titleLbl, c);
+        
+        // Title Field
+        JTextField titleField = new JTextField();
+        titleField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        c.gridy = 1; c.insets = new Insets(0, 0, 12, 0);
+        panel.add(titleField, c);
+        
+        // Content Label
+        JLabel contentLbl = new JLabel("Isi Pengumuman");
+        contentLbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        contentLbl.setForeground(TEXT_DARK);
+        c.gridy = 2; c.insets = new Insets(0, 0, 4, 0);
+        panel.add(contentLbl, c);
+        
+        // Content Area
+        JTextArea contentArea = new JTextArea(6, 20);
+        contentArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        contentArea.setLineWrap(true);
+        contentArea.setWrapStyleWord(true);
+        JScrollPane scroll = new JScrollPane(contentArea);
+        c.gridy = 3; c.weighty = 1; c.fill = GridBagConstraints.BOTH; c.insets = new Insets(0, 0, 16, 0);
+        panel.add(scroll, c);
+        
+        // Buttons
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        btnPanel.setOpaque(false);
+        
+        JButton cancelBtn = new JButton("Batal");
+        cancelBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        JButton saveBtn = makeGreenButton("Simpan");
+        saveBtn.setPreferredSize(new Dimension(100, 32));
+        saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        saveBtn.addActionListener(e -> {
+            String title = titleField.getText().trim();
+            String content = contentArea.getText().trim();
+            if (title.isEmpty() || content.isEmpty()) {
+                ModernDialog.showWarning(dialog, "Judul dan isi pengumuman tidak boleh kosong!", "Peringatan");
+                return;
+            }
+            boolean success = new dao.AnnouncementDAO().createAnnouncement(mentor.getGroupId(), title, content);
+            if (success) {
+                ModernDialog.showInfo(dialog, "Pengumuman berhasil dibuat!", "Sukses");
+                dialog.dispose();
+                loadAnnouncements();
+                refreshFeaturedAnnouncement();
+            } else {
+                ModernDialog.showError(dialog, "Gagal membuat pengumuman.", "Error");
+            }
+        });
+        
+        btnPanel.add(cancelBtn);
+        btnPanel.add(saveBtn);
+        
+        c.gridy = 4; c.weighty = 0; c.fill = GridBagConstraints.HORIZONTAL; c.insets = new Insets(0, 0, 0, 0);
+        panel.add(btnPanel, c);
+        
+        dialog.add(panel);
+        dialog.setVisible(true);
     }
 
     private JPanel createAnnouncementRow(String title, String body, String time) {
@@ -563,7 +720,9 @@ public class MentorDashboard extends BaseLayout {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
         bar.setBackground(CARD_BG);
         bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_CLR));
-        JButton save = makeGreenButton("\uD83D\uDCBE  Save");
+        JButton save = makeGreenButton("Save");
+        save.setIcon(new SvgIcon(SvgIcon.Type.SAVE, 16, Color.WHITE));
+        save.setIconTextGap(8);
         save.setPreferredSize(new Dimension(110, 38));
         bar.add(save);
         return bar;
@@ -590,5 +749,89 @@ public class MentorDashboard extends BaseLayout {
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setPreferredSize(new Dimension(160, 36));
         return btn;
+    }
+
+    private void showAllAnnouncementsDialog() {
+        JDialog dialog = new JDialog((Window) SwingUtilities.getWindowAncestor(this), "Semua Pengumuman", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(520, 420);
+        dialog.setLocationRelativeTo(this);
+        dialog.getContentPane().setBackground(BG_PAGE);
+        dialog.setLayout(new BorderLayout());
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(CARD_BG);
+        header.setBorder(new CompoundBorder(
+            new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+            new EmptyBorder(16, 24, 16, 24)
+        ));
+        JLabel title = new JLabel("📢  Semua Pengumuman");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        title.setForeground(TEXT_DARK);
+        header.add(title, BorderLayout.WEST);
+        dialog.add(header, BorderLayout.NORTH);
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+        listPanel.setBorder(new EmptyBorder(16, 24, 16, 24));
+
+        java.util.List<model.Announcement> announcements = new dao.AnnouncementDAO().getAnnouncementsByGroupId(mentor.getGroupId());
+
+        if (announcements.isEmpty()) {
+            JLabel empty = new JLabel("Tidak ada pengumuman.", SwingConstants.CENTER);
+            empty.setFont(new Font("Segoe UI", Font.ITALIC, 13));
+            empty.setForeground(TEXT_MUTED);
+            listPanel.add(empty);
+        } else {
+            for (int i = 0; i < announcements.size(); i++) {
+                model.Announcement ann = announcements.get(i);
+                JPanel row = createAnnouncementRow(ann.getTitle(), ann.getContent(), formatTimestamp(ann.getCreatedAt()));
+                listPanel.add(row);
+                if (i < announcements.size() - 1) {
+                    JPanel sep = new JPanel();
+                    sep.setBackground(BORDER_CLR);
+                    sep.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+                    sep.setPreferredSize(new Dimension(0, 1));
+                    listPanel.add(Box.createVerticalStrut(10));
+                    listPanel.add(sep);
+                    listPanel.add(Box.createVerticalStrut(10));
+                }
+            }
+        }
+
+        JScrollPane scroll = new JScrollPane(listPanel);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        dialog.add(scroll, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 12));
+        footer.setBackground(new Color(249, 250, 251));
+        footer.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_CLR));
+        
+        JButton closeBtn = new JButton("Tutup") {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(GREEN_PRIMARY);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        closeBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        closeBtn.setForeground(Color.WHITE);
+        closeBtn.setContentAreaFilled(false);
+        closeBtn.setBorderPainted(false);
+        closeBtn.setFocusPainted(false);
+        closeBtn.setPreferredSize(new Dimension(80, 32));
+        closeBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        closeBtn.addActionListener(e -> dialog.dispose());
+        
+        footer.add(closeBtn);
+        dialog.add(footer, BorderLayout.SOUTH);
+
+        dialog.setVisible(true);
     }
 }

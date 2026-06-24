@@ -17,7 +17,7 @@ public class AttendanceDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement checkStmt = conn.prepareStatement(checkQuery)) {
             
-            checkStmt.setInt(1, attendance.getUserId());
+            checkStmt.setLong(1, attendance.getUserId());
             checkStmt.setString(2, attendance.getAgenda());
             ResultSet rs = checkStmt.executeQuery();
             
@@ -28,7 +28,7 @@ public class AttendanceDAO {
                     updateStmt.setDate(1, attendance.getAttendanceDate());
                     updateStmt.setString(2, attendance.getStatus());
                     updateStmt.setString(3, attendance.getNotes());
-                    updateStmt.setInt(4, attendance.getUserId());
+                    updateStmt.setLong(4, attendance.getUserId());
                     updateStmt.setString(5, attendance.getAgenda());
                     return updateStmt.executeUpdate() > 0;
                 }
@@ -36,7 +36,7 @@ public class AttendanceDAO {
                 // Record does not exist, let's insert it
                 String insertQuery = "INSERT INTO attendance (user_id, agenda, attendance_date, status, notes) VALUES (?, ?, ?, ?, ?)";
                 try (PreparedStatement insertStmt = conn.prepareStatement(insertQuery)) {
-                    insertStmt.setInt(1, attendance.getUserId());
+                    insertStmt.setLong(1, attendance.getUserId());
                     insertStmt.setString(2, attendance.getAgenda());
                     insertStmt.setDate(3, attendance.getAttendanceDate());
                     insertStmt.setString(4, attendance.getStatus());
@@ -50,19 +50,19 @@ public class AttendanceDAO {
         }
     }
     
-    public List<Attendance> getAttendanceByUserId(int userId) {
+    public List<Attendance> getAttendanceByUserId(long userId) {
         List<Attendance> attendanceList = new ArrayList<>();
         String query = "SELECT * FROM attendance WHERE user_id = ? ORDER BY attendance_date DESC";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
-            pstmt.setInt(1, userId);
+            pstmt.setLong(1, userId);
             ResultSet rs = pstmt.executeQuery();
             
             while (rs.next()) {
                 Attendance attendance = new Attendance();
                 attendance.setId(rs.getInt("id"));
-                attendance.setUserId(rs.getInt("user_id"));
+                attendance.setUserId(rs.getLong("user_id"));
                 attendance.setAgenda(rs.getString("agenda"));
                 attendance.setAttendanceDate(rs.getDate("attendance_date"));
                 attendance.setStatus(rs.getString("status"));
@@ -85,7 +85,7 @@ public class AttendanceDAO {
             while (rs.next()) {
                 Attendance attendance = new Attendance();
                 attendance.setId(rs.getInt("id"));
-                attendance.setUserId(rs.getInt("user_id"));
+                attendance.setUserId(rs.getLong("user_id"));
                 attendance.setAgenda(rs.getString("agenda"));
                 attendance.setAttendanceDate(rs.getDate("attendance_date"));
                 attendance.setStatus(rs.getString("status"));
@@ -113,7 +113,7 @@ public class AttendanceDAO {
             while (rs.next()) {
                 Attendance attendance = new Attendance();
                 attendance.setId(rs.getInt("id"));
-                attendance.setUserId(rs.getInt("user_id"));
+                attendance.setUserId(rs.getLong("user_id"));
                 attendance.setAgenda(rs.getString("agenda"));
                 attendance.setAttendanceDate(rs.getDate("attendance_date"));
                 attendance.setStatus(rs.getString("status"));

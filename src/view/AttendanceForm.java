@@ -32,7 +32,7 @@ public class AttendanceForm extends JPanel {
     private static final Color YELLOW_FG     = new Color(0xB4, 0x78, 0x00);
 
     // ── State ─────────────────────────────────────────────────────────
-    private int mentorId;
+    private long mentorId;
     private AttendanceDAO attendanceDAO;
     private GroupDAO groupDAO;
 
@@ -52,7 +52,7 @@ public class AttendanceForm extends JPanel {
     private JLabel kehadiranSubLbl;
 
     // ── Constructor ───────────────────────────────────────────────────
-    public AttendanceForm(int mentorId) {
+    public AttendanceForm(long mentorId) {
         this.mentorId    = mentorId;
         this.attendanceDAO = new AttendanceDAO();
         this.groupDAO      = new GroupDAO();
@@ -62,11 +62,22 @@ public class AttendanceForm extends JPanel {
         setBackground(BG_PAGE);
 
         add(createTopBar(),   BorderLayout.NORTH);
-        add(createBody(),     BorderLayout.CENTER);
+        JPanel body = createBody();
+        add(body,     BorderLayout.CENTER);
 
         loadGroupAndMentees();
         loadAttendanceData();
         refreshStats();
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                body.setBorder(new EmptyBorder(24, side, 24, side));
+                revalidate();
+            }
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -320,19 +331,13 @@ public class AttendanceForm extends JPanel {
         titleRow.add(icon);
         titleRow.add(titleLbl);
 
-        JLabel subLbl = new JLabel("Daftar kehadiran mentee pada agenda mentoring");
+        JLabel subLbl = new JLabel("Daftar kehadiran mentee pada agenda PATRIBERA");
         subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         subLbl.setForeground(TEXT_MUTED);
         headerLeft.add(titleRow, BorderLayout.NORTH);
         headerLeft.add(subLbl,   BorderLayout.SOUTH);
 
-        // "+ Tambah Kehadiran" button
-        JButton addBtn = buildGreenButton("+ Tambah Kehadiran");
-        addBtn.addActionListener(e -> JOptionPane.showMessageDialog(this,
-            "Fitur ini untuk menambah baris mentee manual.", "Info", JOptionPane.INFORMATION_MESSAGE));
-
         cardHeader.add(headerLeft, BorderLayout.WEST);
-        cardHeader.add(addBtn,     BorderLayout.EAST);
 
         // Separator
         JPanel sep = new JPanel();
@@ -366,23 +371,58 @@ public class AttendanceForm extends JPanel {
 
         // Header style
         JTableHeader th = attendanceTable.getTableHeader();
-        th.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        th.setForeground(TEXT_MUTED);
-        th.setBackground(new Color(0xF9, 0xFA, 0xFB));
-        th.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
         th.setPreferredSize(new Dimension(0, 45));
         th.setReorderingAllowed(false);
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setOpaque(true);
+                lbl.setBackground(new Color(0xF9, 0xFA, 0xFB));
+                lbl.setForeground(TEXT_MUTED);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
+                ));
+                if (c == 0 || c == 2) {
+                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                }
+                return lbl;
+            }
+        };
+        for (int i = 0; i < attendanceTable.getColumnModel().getColumnCount(); i++) {
+            attendanceTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
+        }
 
         // Column widths yang direkalibrasi
         int[] widths = {50, 250, 100, 150, 250};
         for (int i = 0; i < widths.length; i++) {
             attendanceTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
+        attendanceTable.getColumnModel().getColumn(0).setMaxWidth(60);
+        attendanceTable.getColumnModel().getColumn(2).setMaxWidth(120);
 
         // Status combo editor with styled badge
         String[] statusOptions = {"hadir", "izin", "sakit", "tanpa keterangan"};
         JComboBox<String> statusCombo = new JComboBox<>(statusOptions);
         statusCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        statusCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value,
+                    int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String) {
+                    String str = (String) value;
+                    if ("hadir".equals(str)) setText("Hadir");
+                    else if ("izin".equals(str)) setText("Izin");
+                    else if ("sakit".equals(str)) setText("Sakit");
+                    else if ("tanpa keterangan".equals(str)) setText("Tanpa Keterangan");
+                }
+                return this;
+            }
+        });
         attendanceTable.getColumnModel().getColumn(3).setCellEditor(new DefaultCellEditor(statusCombo));
 
         // Standard Renderer untuk memastikan padding yang rapi di sel biasa
@@ -391,9 +431,19 @@ public class AttendanceForm extends JPanel {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSel, boolean focus, int r, int c) {
                 JLabel lbl = (JLabel) super.getTableCellRendererComponent(table, value, isSel, focus, r, c);
                 lbl.setOpaque(true);
-                lbl.setBackground(CARD_BG);
-                lbl.setForeground(TEXT_DARK);
+                if (isSel) {
+                    lbl.setBackground(table.getSelectionBackground());
+                    lbl.setForeground(table.getSelectionForeground());
+                } else {
+                    lbl.setBackground(CARD_BG);
+                    lbl.setForeground(TEXT_DARK);
+                }
                 lbl.setBorder(new EmptyBorder(0, 15, 0, 15));
+                if (c == 0 || c == 2) {
+                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                }
                 return lbl;
             }
         };
@@ -430,7 +480,9 @@ public class AttendanceForm extends JPanel {
         bar.setOpaque(false);
         bar.setBorder(new EmptyBorder(8, 0, 0, 0));
 
-        JButton saveBtn = buildGreenButton("\uD83D\uDCBE  Save"); // 💾
+        JButton saveBtn = buildGreenButton("Save");
+        saveBtn.setIcon(new SvgIcon(SvgIcon.Type.SAVE, 16, Color.WHITE));
+        saveBtn.setIconTextGap(8);
         saveBtn.setPreferredSize(new Dimension(130, 40));
         saveBtn.addActionListener(e -> saveAttendance());
         bar.add(saveBtn);
@@ -461,7 +513,7 @@ public class AttendanceForm extends JPanel {
         List<Attendance> existingList =
             attendanceDAO.getAttendanceByGroupAndAgenda(mentorGroup.getId(), selectedAgenda);
 
-        java.util.Map<Integer, Attendance> map = new java.util.HashMap<>();
+        java.util.Map<Long, Attendance> map = new java.util.HashMap<>();
         for (Attendance att : existingList) map.put(att.getUserId(), att);
 
         int no = 1;
@@ -500,7 +552,7 @@ public class AttendanceForm extends JPanel {
         String dateStr = dateField.getText().trim();
 
         if (dateStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Masukkan tanggal!", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Masukkan tanggal!", "Error");
             return;
         }
 
@@ -508,7 +560,7 @@ public class AttendanceForm extends JPanel {
         try {
             date = Date.valueOf(dateStr);
         } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, "Format tanggal salah! Gunakan YYYY-MM-DD", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Format tanggal salah! Gunakan YYYY-MM-DD", "Error");
             return;
         }
 
@@ -517,7 +569,7 @@ public class AttendanceForm extends JPanel {
 
         boolean success = true;
         for (int i = 0; i < tableModel.getRowCount(); i++) {
-            int    menteeId = (int) tableModel.getValueAt(i, 2);
+            long   menteeId = (long) tableModel.getValueAt(i, 2);
             String status   = (String) tableModel.getValueAt(i, 3);
             String notes    = (String) tableModel.getValueAt(i, 4);
             if (notes == null) notes = "";
@@ -527,11 +579,11 @@ public class AttendanceForm extends JPanel {
         }
 
         if (success) {
-            JOptionPane.showMessageDialog(this, "Kehadiran berhasil disimpan!", "Sukses", JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showInfo(this, "Kehadiran berhasil disimpan!", "Sukses");
             loadAttendanceData();
             refreshStats();
         } else {
-            JOptionPane.showMessageDialog(this, "Beberapa data gagal disimpan.", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Beberapa data gagal disimpan.", "Error");
         }
     }
 
@@ -618,25 +670,25 @@ public class AttendanceForm extends JPanel {
                     bg = new Color(220, 252, 231);
                     fg = new Color(22, 163, 74);
                     display = "Hadir";
-                    prefix  = "✔ ";
+                    prefix  = "";
                     break;
                 case "izin":
                     bg = YELLOW_BG;
                     fg = YELLOW_FG;
                     display = "Izin";
-                    prefix  = "⏱ ";
+                    prefix  = "";
                     break;
                 case "sakit":
                     bg = YELLOW_BG;
                     fg = YELLOW_FG;
                     display = "Sakit";
-                    prefix  = "⏱ ";
+                    prefix  = "";
                     break;
                 default:
                     bg = new Color(254, 226, 226);
                     fg = new Color(220, 38, 38);
                     display = "Tanpa Ket.";
-                    prefix  = "✖ ";
+                    prefix  = "";
                     break;
             }
 
@@ -657,51 +709,49 @@ public class AttendanceForm extends JPanel {
             badge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
             JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-            // Hapus logika warna selang-seling, paksa putih (CARD_BG)
-            wrapper.setBackground(CARD_BG);
+            wrapper.setBackground(selected ? table.getSelectionBackground() : CARD_BG);
             wrapper.add(badge);
             return wrapper;
         }
-    }
-
-    /** Renders Nama column with a green initial avatar circle. */
-    private static class AvatarNameRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                boolean selected, boolean focus, int row, int col) {
-
-            String name = value == null ? "" : value.toString();
-            String initial = name.isEmpty() ? "?" : String.valueOf(Character.toUpperCase(name.charAt(0)));
-
-            JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 8));
-            // Hapus logika warna selang-seling, paksa putih (CARD_BG)
-            panel.setBackground(CARD_BG);
-
-            // Avatar circle
-            JPanel avatar = new JPanel(new GridBagLayout()) {
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(GREEN_LIGHT);
-                    g2.fillOval(0, 0, getWidth(), getHeight());
-                    g2.dispose();
-                    super.paintComponent(g);
-                }
-            };
-            avatar.setOpaque(false);
-            avatar.setPreferredSize(new Dimension(32, 32));
-            JLabel initLbl = new JLabel(initial);
-            initLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            initLbl.setForeground(GREEN_PRIMARY);
-            avatar.add(initLbl);
-
-            JLabel nameLbl = new JLabel(name);
-            nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            nameLbl.setForeground(TEXT_DARK);
-
-            panel.add(avatar);
-            panel.add(nameLbl);
-            return panel;
-        }
-    }
+     }
+ 
+     /** Renders Nama column with a green initial avatar circle. */
+     private static class AvatarNameRenderer extends DefaultTableCellRenderer {
+         @Override
+         public Component getTableCellRendererComponent(JTable table, Object value,
+                 boolean selected, boolean focus, int row, int col) {
+ 
+             String name = value == null ? "" : value.toString();
+             String initial = name.isEmpty() ? "?" : String.valueOf(Character.toUpperCase(name.charAt(0)));
+ 
+             JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 8));
+             panel.setBackground(selected ? table.getSelectionBackground() : CARD_BG);
+ 
+             // Avatar circle
+             JPanel avatar = new JPanel(new GridBagLayout()) {
+                 protected void paintComponent(Graphics g) {
+                     Graphics2D g2 = (Graphics2D) g.create();
+                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                     g2.setColor(GREEN_LIGHT);
+                     g2.fillOval(0, 0, getWidth(), getHeight());
+                     g2.dispose();
+                     super.paintComponent(g);
+                 }
+             };
+             avatar.setOpaque(false);
+             avatar.setPreferredSize(new Dimension(32, 32));
+             JLabel initLbl = new JLabel(initial);
+             initLbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+             initLbl.setForeground(GREEN_PRIMARY);
+             avatar.add(initLbl);
+ 
+             JLabel nameLbl = new JLabel(name);
+             nameLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+             nameLbl.setForeground(selected ? table.getSelectionForeground() : TEXT_DARK);
+ 
+             panel.add(avatar);
+             panel.add(nameLbl);
+             return panel;
+         }
+     }
 }

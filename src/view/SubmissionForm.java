@@ -8,7 +8,7 @@ import java.sql.*;
 
 public class SubmissionForm extends JDialog {
     private int taskId;
-    private int userId;
+    private long userId;
     private JTextField linkField;
 
     private static final Color GREEN_PRIMARY = new Color(34, 166, 90);
@@ -19,7 +19,7 @@ public class SubmissionForm extends JDialog {
     private static final Color TEXT_DARK     = new Color(0x1A, 0x1A, 0x2E);
     private static final Color TEXT_MUTED    = new Color(0x6B, 0x72, 0x80);
 
-    public SubmissionForm(int taskId, int userId) {
+    public SubmissionForm(int taskId, long userId) {
         this.taskId = taskId;
         this.userId = userId;
         initComponents();
@@ -135,17 +135,17 @@ public class SubmissionForm extends JDialog {
     private void submitTask() {
         String link = linkField.getText().trim();
         if (link.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
+            ModernDialog.showWarning(this,
                 "Link submission tidak boleh kosong!",
-                "Peringatan", JOptionPane.WARNING_MESSAGE);
+                "Peringatan");
             return;
         }
 
         try (Connection conn = DBConnection.getConnection()) {
             if (conn == null) {
-                JOptionPane.showMessageDialog(this,
+                ModernDialog.showError(this,
                     "Gagal terhubung ke database.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                    "Error");
                 return;
             }
 
@@ -153,7 +153,7 @@ public class SubmissionForm extends JDialog {
             boolean exists = false;
             try (PreparedStatement cs = conn.prepareStatement(checkQuery)) {
                 cs.setInt(1, taskId);
-                cs.setInt(2, userId);
+                cs.setLong(2, userId);
                 try (ResultSet rs = cs.executeQuery()) { exists = rs.next(); }
             }
 
@@ -163,34 +163,34 @@ public class SubmissionForm extends JDialog {
                 try (PreparedStatement ps = conn.prepareStatement(q)) {
                     ps.setString(1, link);
                     ps.setInt(2, taskId);
-                    ps.setInt(3, userId);
+                    ps.setLong(3, userId);
                     success = ps.executeUpdate() > 0;
                 }
             } else {
                 String q = "INSERT INTO task_submissions (task_id, user_id, submission_link, status, submitted_at) VALUES (?, ?, ?, 'Submitted', NOW())";
                 try (PreparedStatement ps = conn.prepareStatement(q)) {
                     ps.setInt(1, taskId);
-                    ps.setInt(2, userId);
+                    ps.setLong(2, userId);
                     ps.setString(3, link);
                     success = ps.executeUpdate() > 0;
                 }
             }
 
             if (success) {
-                JOptionPane.showMessageDialog(this,
+                ModernDialog.showInfo(this,
                     "Tugas berhasil dikumpulkan! 🎉",
-                    "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+                    "Berhasil");
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this,
+                ModernDialog.showError(this,
                     "Gagal mengumpulkan tugas.",
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                    "Error");
             }
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
+            ModernDialog.showError(this,
                 "Database error: " + e.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
+                "Error");
         }
     }
 }

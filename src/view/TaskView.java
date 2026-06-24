@@ -7,10 +7,11 @@ import model.TaskSubmission;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.util.List;
 
 public class TaskView extends JPanel {
-    private int userId;
+    private long userId;
     private int groupId;
     private TaskDAO taskDAO;
     private JPanel cardsPanel;
@@ -22,12 +23,19 @@ public class TaskView extends JPanel {
     private static final Color TEXT_MUTED = new Color(0x6B, 0x72, 0x80);
     private static final Color GREEN_PRIMARY = new Color(34, 166, 90);
     
-    public TaskView(int userId, int groupId) {
+    public TaskView(long userId, int groupId) {
         this.userId = userId;
         this.groupId = groupId;
         this.taskDAO = new TaskDAO();
         initComponents();
         loadTasks();
+        
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                loadTasks();
+            }
+        });
     }
     
     private void initComponents() {
@@ -54,6 +62,16 @@ public class TaskView extends JPanel {
 
         body.add(scrollPane, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                body.setBorder(new EmptyBorder(24, side, 24, side));
+                revalidate();
+            }
+        });
     }
 
     private JPanel createTopBar() {
@@ -170,7 +188,9 @@ public class TaskView extends JPanel {
         descArea.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         // Deadline pill
-        JLabel deadlineLabel = new JLabel("📅  Deadline: " + formatDateTime(task.getDeadline().toString()));
+        JLabel deadlineLabel = new JLabel("Deadline: " + formatDateTime(task.getDeadline().toString()));
+        deadlineLabel.setIcon(new SvgIcon(SvgIcon.Type.DEADLINE, 14, TEXT_MUTED));
+        deadlineLabel.setIconTextGap(6);
         deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         deadlineLabel.setForeground(TEXT_MUTED);
         deadlineLabel.setBorder(new EmptyBorder(5, 10, 5, 10));
@@ -207,9 +227,9 @@ public class TaskView extends JPanel {
         rightPanel.add(statusBadge, BorderLayout.NORTH);
 
         if ("Accepted".equalsIgnoreCase(status)) {
-            rightPanel.add(createSmallNote("✓ Submission diterima"), BorderLayout.SOUTH);
+            rightPanel.add(createSmallNote("Submission diterima"), BorderLayout.SOUTH);
         } else if ("Submitted".equalsIgnoreCase(status)) {
-            rightPanel.add(createSmallNote("⏳ Menunggu review"), BorderLayout.SOUTH);
+            rightPanel.add(createSmallNote("Menunggu review"), BorderLayout.SOUTH);
         } else {
             JButton addSubBtn = new JButton("+ Kumpulkan") {
                 protected void paintComponent(Graphics g) {
@@ -245,6 +265,7 @@ public class TaskView extends JPanel {
     private JLabel createStatusBadge(String status) {
         boolean accepted = "Accepted".equalsIgnoreCase(status);
         boolean submitted = "Submitted".equalsIgnoreCase(status);
+        boolean rejected = "Rejected".equalsIgnoreCase(status);
 
         String text;
         Color bg;
@@ -255,8 +276,12 @@ public class TaskView extends JPanel {
             fg = new Color(22, 163, 74);
         } else if (submitted) {
             text = "Terkirim";
-            bg = new Color(241, 245, 249);
-            fg = TEXT_MUTED;
+            bg = new Color(243, 244, 246);
+            fg = new Color(75, 85, 99);
+        } else if (rejected) {
+            text = "Ditolak";
+            bg = new Color(254, 226, 226);
+            fg = new Color(153, 27, 27);
         } else {
             text = "Belum Kumpul";
             bg = new Color(254, 243, 199);

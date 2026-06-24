@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 public class TaskSubmission {
     private int id;
     private int taskId;
-    private int userId;
+    private long userId;
     private String userName;
     private String submissionLink;
     private String status;
@@ -13,7 +13,7 @@ public class TaskSubmission {
     
     public TaskSubmission() {}
     
-    public TaskSubmission(int id, int taskId, int userId, String userName, String submissionLink, String status, Timestamp submittedAt) {
+    public TaskSubmission(int id, int taskId, long userId, String userName, String submissionLink, String status, Timestamp submittedAt) {
         this.id = id;
         this.taskId = taskId;
         this.userId = userId;
@@ -30,8 +30,8 @@ public class TaskSubmission {
     public int getTaskId() { return taskId; }
     public void setTaskId(int taskId) { this.taskId = taskId; }
     
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
     
     public String getUserName() { return userName; }
     public void setUserName(String userName) { this.userName = userName; }

@@ -1,17 +1,17 @@
 package model;
 
-import java.sql.Date;
+import java.sql.Timestamp;
 
 public class Task {
     private int id;
     private int groupId;
     private String title;
     private String description;
-    private Date deadline;
+    private Timestamp deadline;
     
     public Task() {}
     
-    public Task(int id, int groupId, String title, String description, Date deadline) {
+    public Task(int id, int groupId, String title, String description, Timestamp deadline) {
         this.id = id;
         this.groupId = groupId;
         this.title = title;
@@ -31,6 +31,6 @@ public class Task {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     
-    public Date getDeadline() { return deadline; }
-    public void setDeadline(Date deadline) { this.deadline = deadline; }
+    public Timestamp getDeadline() { return deadline; }
+    public void setDeadline(Timestamp deadline) { this.deadline = deadline; }
 }

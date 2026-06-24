@@ -26,9 +26,8 @@ public class Router {
         } else if (user instanceof Mentee) {
             new MenteeDashboard((Mentee) user).setVisible(true);
         } else {
-            JOptionPane.showMessageDialog(currentFrame, 
-                "Role tidak dikenali!", "Navigasi Error", 
-                JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(currentFrame, 
+                "Role tidak dikenali!", "Navigasi Error");
             return;
         }
         
@@ -48,11 +47,10 @@ public class Router {
      * Handles the logout confirmation process, opening the login window if confirmed.
      */
     public static void logout(JFrame currentFrame) {
-        int confirm = JOptionPane.showConfirmDialog(currentFrame, 
-            "Apakah Anda yakin ingin logout?", "Konfirmasi Logout", 
-            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        boolean confirm = ModernDialog.showConfirm(currentFrame, 
+            "Apakah Anda yakin ingin logout?", "Konfirmasi Logout");
             
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (confirm) {
             showLogin();
             if (currentFrame != null) {
                 currentFrame.dispose();

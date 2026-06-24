@@ -1,7 +1,7 @@
 package model;
 
 public class UserProfile {
-    private int userId;
+    private long userId;
     private String jurusan;
     private String fakultas;
     private String kontak;
@@ -15,7 +15,7 @@ public class UserProfile {
     
     public UserProfile() {}
     
-    public UserProfile(int userId, String jurusan, String fakultas, String kontak, String bio,
+    public UserProfile(long userId, String jurusan, String fakultas, String kontak, String bio,
                        String linkedinUrl, String instagramHandle, String tiktokHandle,
                        String xHandle, String youtubeUrl, String otherSocial) {
         this.userId = userId;
@@ -32,8 +32,8 @@ public class UserProfile {
     }
     
     // Getters and Setters
-    public int getUserId() { return userId; }
-    public void setUserId(int userId) { this.userId = userId; }
+    public long getUserId() { return userId; }
+    public void setUserId(long userId) { this.userId = userId; }
     
     public String getJurusan() { return jurusan; }
     public void setJurusan(String jurusan) { this.jurusan = jurusan; }

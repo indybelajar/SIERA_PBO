@@ -6,10 +6,11 @@ import model.Attendance;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.awt.event.*;
 import java.util.List;
 
 public class AttendanceView extends JPanel {
-    private int userId;
+    private long userId;
     private AttendanceDAO attendanceDAO;
     private JPanel cardsPanel;
 
@@ -21,7 +22,7 @@ public class AttendanceView extends JPanel {
     private static final Color GREEN_PRIMARY = new Color(34, 166, 90);
     private static final Color GREEN_LIGHT = new Color(232, 245, 238);
     
-    public AttendanceView(int userId) {
+    public AttendanceView(long userId) {
         this.userId = userId;
         this.attendanceDAO = new AttendanceDAO();
         initComponents();
@@ -52,6 +53,16 @@ public class AttendanceView extends JPanel {
 
         body.add(scrollPane, BorderLayout.CENTER);
         add(body, BorderLayout.CENTER);
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                body.setBorder(new EmptyBorder(24, side, 24, side));
+                revalidate();
+            }
+        });
     }
 
     private JPanel createTopBar() {
@@ -114,8 +125,6 @@ public class AttendanceView extends JPanel {
         card.setLayout(new BorderLayout(18, 0));
         card.setBorder(new EmptyBorder(18, 20, 18, 20));
 
-        JPanel iconCircle = createIconCircle(att.getStatus());
-
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
@@ -152,7 +161,6 @@ public class AttendanceView extends JPanel {
         rightPanel.add(createStatusBadge(att.getStatus()), BorderLayout.NORTH);
         rightPanel.add(createSmallNote(getStatusNote(att.getStatus())), BorderLayout.SOUTH);
 
-        card.add(iconCircle, BorderLayout.WEST);
         card.add(leftPanel, BorderLayout.CENTER);
         card.add(rightPanel, BorderLayout.EAST);
 

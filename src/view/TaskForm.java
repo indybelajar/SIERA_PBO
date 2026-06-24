@@ -10,7 +10,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.Date;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -52,6 +52,7 @@ public class TaskForm extends JPanel {
     private JTable        submissionTable;
     private DefaultTableModel tableModel;
     private boolean isUpdatingTable = false;
+    private boolean isCreateFormExpanded = false;
 
     // ────────────────────────────────────────────────────────────────────────
     public TaskForm(int groupId) {
@@ -90,8 +91,15 @@ public class TaskForm extends JPanel {
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         add(scroll, BorderLayout.CENTER);
 
-        // ── Bottom save bar ───────────────────────────────────────────────────
-        add(buildBottomBar(), BorderLayout.SOUTH);
+        scroll.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int w = scroll.getWidth();
+                int side = Math.max(28, (w - 920) / 2);
+                body.setBorder(new EmptyBorder(24, side, 24, side));
+                body.revalidate();
+            }
+        });
     }
 
     // ── Top bar ───────────────────────────────────────────────────────────────
@@ -128,7 +136,7 @@ public class TaskForm extends JPanel {
         JLabel titleLbl = new JLabel("Task Management");
         titleLbl.setFont(new Font("Segoe UI", Font.BOLD, 22));
         titleLbl.setForeground(TEXT_DARK);
-        JLabel subLbl = new JLabel("Buat dan kelola tugas untuk mentee dalam program mentoring.");
+        JLabel subLbl = new JLabel("Buat dan kelola tugas untuk mentee dalam program PATRIBERA.");
         subLbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subLbl.setForeground(TEXT_MUTED);
         textBlock.add(titleLbl, BorderLayout.NORTH);
@@ -168,18 +176,31 @@ public class TaskForm extends JPanel {
         card.setLayout(new BorderLayout(0, 16));
 
         // Card header
-        JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
+        header.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        
+        JPanel leftHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        leftHeader.setOpaque(false);
         JPanel hIcon = sectionIconCircle("\uD83D\uDCCB"); // 📋
         JLabel hLbl = new JLabel("Buat Tugas Baru");
         hLbl.setFont(new Font("Segoe UI", Font.BOLD, 16));
         hLbl.setForeground(TEXT_DARK);
-        header.add(hIcon); header.add(hLbl);
+        leftHeader.add(hIcon); leftHeader.add(hLbl);
+
+        JLabel toggleChevron = new JLabel("▶  ");
+        toggleChevron.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        toggleChevron.setForeground(TEXT_MUTED);
+
+        header.add(leftHeader, BorderLayout.WEST);
+        header.add(toggleChevron, BorderLayout.EAST);
         card.add(header, BorderLayout.NORTH);
 
         // Form
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
+        form.setVisible(false); // Collapsed by default
+        
         GridBagConstraints g = new GridBagConstraints();
         g.fill = GridBagConstraints.HORIZONTAL;
         g.gridx = 0; g.weightx = 1;
@@ -246,9 +267,9 @@ public class TaskForm extends JPanel {
         deadlineInputWrapper.setPreferredSize(new Dimension(220, 40));
         deadlineInputWrapper.setMaximumSize(new Dimension(280, 40));
 
-        JLabel calIcon = new JLabel("  \uD83D\uDCC5  "); // 📅
-        calIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
-        calIcon.setForeground(TEXT_MUTED);
+        JLabel calIcon = new JLabel();
+        calIcon.setIcon(new SvgIcon(SvgIcon.Type.DEADLINE, 16, TEXT_MUTED));
+        calIcon.setBorder(new EmptyBorder(0, 10, 0, 4));
 
         deadlineField = new JTextField();
         deadlineField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -277,6 +298,18 @@ public class TaskForm extends JPanel {
         form.add(deadlineAndBtn, g);
 
         card.add(form, BorderLayout.CENTER);
+
+        header.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                isCreateFormExpanded = !isCreateFormExpanded;
+                form.setVisible(isCreateFormExpanded);
+                toggleChevron.setText(isCreateFormExpanded ? "▼  " : "▶  ");
+                card.revalidate();
+                card.repaint();
+            }
+        });
+
         return card;
     }
 
@@ -399,10 +432,32 @@ public class TaskForm extends JPanel {
         submissionTable.setShowGrid(true);
         submissionTable.setGridColor(BORDER_CLR);
         submissionTable.setIntercellSpacing(new Dimension(0, 1));
-        submissionTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
-        submissionTable.getTableHeader().setBackground(new Color(249, 250, 251));
-        submissionTable.getTableHeader().setForeground(TEXT_MUTED);
-        submissionTable.getTableHeader().setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
+        submissionTable.getTableHeader().setPreferredSize(new Dimension(0, 45));
+        submissionTable.getTableHeader().setReorderingAllowed(false);
+        
+        DefaultTableCellRenderer headerRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
+                JLabel lbl = (JLabel) super.getTableCellRendererComponent(t, v, s, f, r, c);
+                lbl.setOpaque(true);
+                lbl.setBackground(new Color(249, 250, 251));
+                lbl.setForeground(TEXT_MUTED);
+                lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+                lbl.setBorder(BorderFactory.createCompoundBorder(
+                    new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
+                ));
+                if (c == 0 || c == 2) {
+                    lbl.setHorizontalAlignment(SwingConstants.CENTER);
+                } else {
+                    lbl.setHorizontalAlignment(SwingConstants.LEFT);
+                }
+                return lbl;
+            }
+        };
+        for (int i = 0; i < submissionTable.getColumnModel().getColumnCount(); i++) {
+            submissionTable.getColumnModel().getColumn(i).setHeaderRenderer(headerRenderer);
+        }
+
         submissionTable.setSelectionBackground(new Color(220, 252, 231));
         submissionTable.setSelectionForeground(TEXT_DARK);
 
@@ -411,7 +466,8 @@ public class TaskForm extends JPanel {
         submissionTable.getColumnModel().getColumn(0).setPreferredWidth(50);
         submissionTable.getColumnModel().getColumn(0).setMaxWidth(60);
         submissionTable.getColumnModel().getColumn(1).setPreferredWidth(180);
-        submissionTable.getColumnModel().getColumn(2).setPreferredWidth(80);
+        submissionTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        submissionTable.getColumnModel().getColumn(2).setMaxWidth(120);
         submissionTable.getColumnModel().getColumn(3).setPreferredWidth(260);
         submissionTable.getColumnModel().getColumn(4).setPreferredWidth(140);
 
@@ -421,10 +477,10 @@ public class TaskForm extends JPanel {
             public Component getTableCellRendererComponent(JTable t, Object val,
                     boolean sel, boolean foc, int row, int col) {
                 JPanel cell = new JPanel(new GridBagLayout());
-                cell.setBackground(row % 2 == 0 ? CARD_BG : new Color(249, 250, 251));
+                cell.setBackground(sel ? t.getSelectionBackground() : (row % 2 == 0 ? CARD_BG : new Color(249, 250, 251)));
                 JLabel lbl = new JLabel(val == null ? "" : val.toString());
                 lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-                lbl.setForeground(TEXT_MUTED);
+                lbl.setForeground(sel ? t.getSelectionForeground() : TEXT_DARK);
                 lbl.setHorizontalAlignment(SwingConstants.CENTER);
                 cell.add(lbl);
                 return cell;
@@ -434,9 +490,34 @@ public class TaskForm extends JPanel {
         submissionTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
 
         // Status dropdown editor
-        String[] statusOpts = {"Pending", "Terkirim", "Diterima", "Ditolak"};
+        String[] statusOpts = {"Terkirim", "Diterima", "Ditolak"};
         JComboBox<String> statusCombo = new JComboBox<>(statusOpts);
-        statusCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        statusCombo.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        statusCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                label.setBorder(new EmptyBorder(6, 10, 6, 10));
+                if (value != null) {
+                    String status = value.toString();
+                    Color bg, fg;
+                    switch (status) {
+                        case "Diterima" -> { bg = STATUS_GREEN_BG; fg = STATUS_GREEN_FG; }
+                        case "Terkirim" -> { bg = STATUS_GRAY_BG; fg = STATUS_GRAY_FG; }
+                        case "Ditolak"  -> { bg = STATUS_RED_BG; fg = STATUS_RED_FG; }
+                        default         -> { bg = STATUS_GRAY_BG; fg = STATUS_GRAY_FG; }
+                    }
+                    if (isSelected) {
+                        label.setBackground(bg.darker());
+                        label.setForeground(Color.WHITE);
+                    } else {
+                        label.setBackground(bg);
+                        label.setForeground(fg);
+                    }
+                }
+                return label;
+            }
+        });
         submissionTable.getColumnModel().getColumn(4).setCellEditor(new DefaultCellEditor(statusCombo));
 
         // Status badge renderer
@@ -479,17 +560,6 @@ public class TaskForm extends JPanel {
         return card;
     }
 
-    // ── Bottom save bar ───────────────────────────────────────────────────────
-    private JPanel buildBottomBar() {
-        JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 10));
-        bar.setBackground(CARD_BG);
-        bar.setBorder(new MatteBorder(1, 0, 0, 0, BORDER_CLR));
-        JButton save = greenButton("\uD83D\uDCBE  Save");
-        save.setPreferredSize(new Dimension(120, 38));
-        bar.add(save);
-        return bar;
-    }
-
     // ════════════════════════════════════════════════════════════════════════
     //  BUSINESS LOGIC (unchanged from original)
     // ════════════════════════════════════════════════════════════════════════
@@ -529,12 +599,12 @@ public class TaskForm extends JPanel {
 
         if (title.isEmpty() || desc.isEmpty() || dl.isEmpty()
                 || desc.equals("Masukkan deskripsi tugas")) {
-            JOptionPane.showMessageDialog(this, "Harap isi semua kolom!", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Harap isi semua kolom!", "Error");
             return;
         }
 
         // Accept dd/MM/yyyy HH:mm or YYYY-MM-DD HH:MM:SS
-        Date deadline;
+        Timestamp deadline;
         try {
             String normalized = dl;
             if (dl.matches("\\d{2}/\\d{2}/\\d{4}.*")) {
@@ -544,22 +614,22 @@ public class TaskForm extends JPanel {
             } else if (normalized.length() == 10) {
                 normalized += " 23:59:00";
             }
-            deadline = new Date(java.sql.Timestamp.valueOf(normalized).getTime());
+            deadline = java.sql.Timestamp.valueOf(normalized);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Format tanggal salah! Gunakan DD/MM/YYYY HH:mm", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Format tanggal salah! Gunakan DD/MM/YYYY HH:mm", "Error");
             return;
         }
 
         Task task = new Task(0, groupId, title, desc, deadline);
         if (taskDAO.createTask(task)) {
-            JOptionPane.showMessageDialog(this, "Tugas berhasil dibuat!", "Berhasil", JOptionPane.INFORMATION_MESSAGE);
+            ModernDialog.showInfo(this, "Tugas berhasil dibuat!", "Berhasil");
             titleField.setText("");
             descriptionArea.setText("Masukkan deskripsi tugas");
             descriptionArea.setForeground(new Color(156, 163, 175));
             deadlineField.setText(LocalDate.now().plusDays(7).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " 23:59");
             loadGroupTasks();
         } else {
-            JOptionPane.showMessageDialog(this, "Gagal membuat tugas!", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Gagal membuat tugas!", "Error");
         }
     }
 
@@ -567,10 +637,10 @@ public class TaskForm extends JPanel {
         TaskWrapper wrapper = (TaskWrapper) taskSelector.getSelectedItem();
         if (wrapper == null) return;
         int taskId   = wrapper.getTask().getId();
-        int menteeId = (int) tableModel.getValueAt(row, 2);
+        long menteeId = (long) tableModel.getValueAt(row, 2);
         String db    = mapDisplayToStatus((String) tableModel.getValueAt(row, 4));
         if (!taskDAO.updateSubmissionStatus(taskId, menteeId, db)) {
-            JOptionPane.showMessageDialog(this, "Gagal mengupdate status!", "Error", JOptionPane.ERROR_MESSAGE);
+            ModernDialog.showError(this, "Gagal mengupdate status!", "Error");
         }
     }
 
@@ -616,23 +686,22 @@ public class TaskForm extends JPanel {
 
             String status = val == null ? "Pending" : val.toString();
             Color bg, fg;
-            String icon;
             switch (status) {
-                case "Diterima" -> { bg = STATUS_GREEN_BG;  fg = STATUS_GREEN_FG;  icon = "\u2705 "; }
-                case "Terkirim" -> { bg = STATUS_YELLOW_BG; fg = STATUS_YELLOW_FG; icon = "\uD83D\uDD52 "; }
-                case "Ditolak"  -> { bg = STATUS_RED_BG;    fg = STATUS_RED_FG;    icon = "\u274C "; }
-                default         -> { bg = STATUS_GRAY_BG;   fg = STATUS_GRAY_FG;   icon = "\uD83D\uDD52 "; }
+                case "Diterima" -> { bg = STATUS_GREEN_BG;  fg = STATUS_GREEN_FG; }
+                case "Terkirim" -> { bg = STATUS_GRAY_BG;   fg = STATUS_GRAY_FG; }
+                case "Ditolak"  -> { bg = STATUS_RED_BG;    fg = STATUS_RED_FG; }
+                default         -> { bg = STATUS_GRAY_BG;   fg = STATUS_GRAY_FG; }
             }
 
             pill.setBackground(bg);
-            JLabel lbl = new JLabel(icon + status);
-            lbl.setFont(new Font("Segoe UI Emoji", Font.BOLD, 11));
+            JLabel lbl = new JLabel(status);
+            lbl.setFont(new Font("Segoe UI", Font.BOLD, 11));
             lbl.setForeground(fg);
             pill.setBorder(new EmptyBorder(4, 10, 4, 10));
             pill.add(lbl);
 
             JPanel wrapper = new JPanel(new GridBagLayout());
-            wrapper.setBackground(row % 2 == 0 ? CARD_BG : new Color(249, 250, 251));
+            wrapper.setBackground(sel ? t.getSelectionBackground() : (row % 2 == 0 ? CARD_BG : new Color(249, 250, 251)));
             wrapper.add(pill);
             return wrapper;
         }
@@ -645,7 +714,7 @@ public class TaskForm extends JPanel {
                 boolean sel, boolean foc, int row, int col) {
             // Outer: GridBagLayout agar center vertikal
             JPanel cell = new JPanel(new GridBagLayout());
-            cell.setBackground(row % 2 == 0 ? CARD_BG : new Color(249, 250, 251));
+            cell.setBackground(sel ? t.getSelectionBackground() : (row % 2 == 0 ? CARD_BG : new Color(249, 250, 251)));
 
             String link = val == null ? "-" : val.toString();
 
@@ -658,11 +727,11 @@ public class TaskForm extends JPanel {
                 icon.setForeground(new Color(66, 133, 244));
                 JLabel lbl = new JLabel(link.length() > 24 ? link.substring(0, 22) + "..." : link);
                 lbl.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-                lbl.setForeground(new Color(59, 130, 246));
+                lbl.setForeground(sel ? t.getSelectionForeground() : new Color(59, 130, 246));
                 inner.add(icon); inner.add(lbl);
             } else {
                 JLabel dash = new JLabel("—");
-                dash.setForeground(TEXT_MUTED);
+                dash.setForeground(sel ? t.getSelectionForeground() : TEXT_MUTED);
                 dash.setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 inner.add(dash);
             }
@@ -672,48 +741,22 @@ public class TaskForm extends JPanel {
         }
     }
 
-    /** Avatar circle + name for Mentee column */
+    /** Name only, left-aligned for Mentee column */
     private class MenteeNameRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable t, Object val,
                 boolean sel, boolean foc, int row, int col) {
-            // Outer: GridBagLayout agar center vertikal di row
-            JPanel cell = new JPanel(new GridBagLayout());
-            cell.setBackground(row % 2 == 0 ? CARD_BG : new Color(249, 250, 251));
+            JPanel cell = new JPanel(new BorderLayout());
+            cell.setBackground(sel ? t.getSelectionBackground() : (row % 2 == 0 ? CARD_BG : new Color(249, 250, 251)));
 
             String name = val == null ? "" : val.toString();
-            String initial = name.isEmpty() ? "?" : String.valueOf(name.charAt(0)).toUpperCase();
-
-            JPanel avatar = new JPanel(new GridBagLayout()) {
-                @Override protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(GREEN_LIGHT);
-                    g2.fillOval(0, 0, getWidth(), getHeight());
-                    g2.setColor(GREEN_TEXT);
-                    g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-                    FontMetrics fm = g2.getFontMetrics();
-                    g2.drawString(initial, (getWidth()-fm.stringWidth(initial))/2,
-                        (getHeight()+fm.getAscent()-fm.getDescent())/2);
-                    g2.dispose();
-                }
-                @Override public Dimension getPreferredSize() { return new Dimension(32, 32); }
-                @Override public Dimension getMinimumSize()   { return new Dimension(32, 32); }
-            };
-            avatar.setOpaque(false);
-
             JLabel lbl = new JLabel(name);
             lbl.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-            lbl.setForeground(TEXT_DARK);
+            lbl.setForeground(sel ? t.getSelectionForeground() : TEXT_DARK);
+            lbl.setHorizontalAlignment(SwingConstants.LEFT);
 
-            // Inner row panel: avatar + gap + name
-            JPanel inner = new JPanel(new BorderLayout(10, 0));
-            inner.setOpaque(false);
-            inner.add(avatar, BorderLayout.WEST);
-            inner.add(lbl,    BorderLayout.CENTER);
-            inner.setBorder(new EmptyBorder(0, 8, 0, 8));
-
-            cell.add(inner);
+            cell.add(lbl, BorderLayout.CENTER);
+            cell.setBorder(new EmptyBorder(0, 16, 0, 16));
             return cell;
         }
     }
