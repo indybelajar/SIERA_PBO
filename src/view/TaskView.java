@@ -5,7 +5,7 @@ import model.Task;
 import model.TaskSubmission;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
+import javax.swing.border.*;
 import java.awt.*;
 import java.util.List;
 
@@ -14,6 +14,13 @@ public class TaskView extends JPanel {
     private int groupId;
     private TaskDAO taskDAO;
     private JPanel cardsPanel;
+
+    private static final Color BG_PAGE = new Color(0xF4, 0xF6, 0xF8);
+    private static final Color CARD_BG = Color.WHITE;
+    private static final Color BORDER_CLR = new Color(0xE5, 0xE7, 0xEB);
+    private static final Color TEXT_DARK = new Color(0x1A, 0x1A, 0x2E);
+    private static final Color TEXT_MUTED = new Color(0x6B, 0x72, 0x80);
+    private static final Color GREEN_PRIMARY = new Color(34, 166, 90);
     
     public TaskView(int userId, int groupId) {
         this.userId = userId;
@@ -24,161 +31,261 @@ public class TaskView extends JPanel {
     }
     
     private void initComponents() {
-        setLayout(new BorderLayout(15, 15));
-        setBorder(BorderFactory.createEmptyBorder(20, 30, 20, 30));
-        
-        // --- Title Panel ---
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
-        JLabel titleLabel = new JLabel("TASK MANAGEMENT");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titlePanel.add(titleLabel, BorderLayout.WEST);
-        
-        JSeparator titleSep = new JSeparator();
-        titleSep.setForeground(Color.LIGHT_GRAY);
-        titlePanel.add(titleSep, BorderLayout.SOUTH);
-        add(titlePanel, BorderLayout.NORTH);
-        
-        // --- Scroll Panel for Cards ---
+        setLayout(new BorderLayout());
+        setBackground(BG_PAGE);
+
+        add(createTopBar(), BorderLayout.NORTH);
+
+        JPanel body = new JPanel(new BorderLayout());
+        body.setBackground(BG_PAGE);
+        body.setBorder(new EmptyBorder(24, 28, 24, 28));
+
         cardsPanel = new JPanel();
         cardsPanel.setLayout(new BoxLayout(cardsPanel, BoxLayout.Y_AXIS));
-        
+        cardsPanel.setOpaque(false);
+
         JScrollPane scrollPane = new JScrollPane(cardsPanel);
         scrollPane.setBorder(null);
+        scrollPane.setOpaque(false);
+        scrollPane.getViewport().setOpaque(false);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        
-        add(scrollPane, BorderLayout.CENTER);
+
+        body.add(scrollPane, BorderLayout.CENTER);
+        add(body, BorderLayout.CENTER);
+    }
+
+    private JPanel createTopBar() {
+        JPanel bar = new JPanel(new BorderLayout());
+        bar.setBackground(CARD_BG);
+        bar.setBorder(new CompoundBorder(
+            new MatteBorder(0, 0, 1, 0, BORDER_CLR),
+            new EmptyBorder(18, 28, 18, 28)
+        ));
+
+        JPanel textPanel = new JPanel(new BorderLayout(0, 3));
+        textPanel.setOpaque(false);
+
+        JLabel titleLabel = new JLabel("Task Management");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        titleLabel.setForeground(TEXT_DARK);
+
+        JLabel subtitleLabel = new JLabel("Pantau tugas kelompokmu dan kumpulkan submission tepat waktu.");
+        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        subtitleLabel.setForeground(TEXT_MUTED);
+
+        textPanel.add(titleLabel, BorderLayout.NORTH);
+        textPanel.add(subtitleLabel, BorderLayout.SOUTH);
+        bar.add(textPanel, BorderLayout.WEST);
+
+        return bar;
     }
     
     private void loadTasks() {
         cardsPanel.removeAll();
         List<Task> tasks = taskDAO.getTasksByGroupId(groupId);
-        
+
         if (tasks.isEmpty()) {
-            JPanel emptyPanel = new JPanel(new GridBagLayout());
-            JLabel emptyLabel = new JLabel("Belum ada tugas untuk kelompok Anda.");
+            JPanel emptyPanel = new JPanel(new GridBagLayout()) {
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(CARD_BG);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                    g2.setColor(BORDER_CLR);
+                    g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+            };
+            emptyPanel.setOpaque(false);
+            emptyPanel.setBorder(new EmptyBorder(42, 24, 42, 24));
+            emptyPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
+            JLabel emptyLabel = new JLabel("Belum ada tugas untuk kelompokmu.");
             emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
-            emptyLabel.setForeground(Color.GRAY);
+            emptyLabel.setForeground(TEXT_MUTED);
             emptyPanel.add(emptyLabel);
             cardsPanel.add(emptyPanel);
         } else {
+            // Header label
+            JLabel headerTitle = new JLabel("Daftar Tugas (" + tasks.size() + ")");
+            headerTitle.setFont(new Font("Segoe UI", Font.BOLD, 15));
+            headerTitle.setForeground(TEXT_DARK);
+            headerTitle.setBorder(new EmptyBorder(0, 4, 12, 0));
+            headerTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+            cardsPanel.add(headerTitle);
+
+            // 1 task = 1 card
             for (Task task : tasks) {
-                JPanel card = createTaskCard(task);
-                cardsPanel.add(card);
-                cardsPanel.add(Box.createVerticalStrut(15));
+                cardsPanel.add(createTaskCard(task));
+                cardsPanel.add(Box.createVerticalStrut(12));
             }
         }
-        
+
         cardsPanel.revalidate();
         cardsPanel.repaint();
     }
     
     private JPanel createTaskCard(Task task) {
-        JPanel card = new JPanel(new BorderLayout(15, 10));
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
-            BorderFactory.createEmptyBorder(15, 20, 15, 20)
-        ));
-        card.setBackground(Color.WHITE);
-        
-        // Find user submission status for this task
         TaskSubmission submission = taskDAO.getSubmissionByTaskAndUser(task.getId(), userId);
         String status = (submission != null) ? submission.getStatus() : "Pending";
-        
-        // Left Panel: Title, Description, Deadline
+
+        JPanel card = new JPanel(new BorderLayout(18, 0)) {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(CARD_BG);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+                g2.setColor(BORDER_CLR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 14, 14);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        card.setOpaque(false);
+        card.setBorder(new EmptyBorder(18, 20, 18, 20));
+        card.setAlignmentX(Component.LEFT_ALIGNMENT);
+        card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 160));
+
+        // Kiri: info tugas
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
-        
+
         JLabel titleLabel = new JLabel(task.getTitle());
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        titleLabel.setForeground(new Color(15, 23, 42)); // Slate-900
-        leftPanel.add(titleLabel);
-        leftPanel.add(Box.createVerticalStrut(6));
-        
-        JLabel descHeader = new JLabel("Deskripsi:");
-        descHeader.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        descHeader.setForeground(Color.DARK_GRAY);
-        leftPanel.add(descHeader);
-        
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
+        titleLabel.setForeground(TEXT_DARK);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
         JTextArea descArea = new JTextArea(task.getDescription());
         descArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        descArea.setForeground(Color.DARK_GRAY);
+        descArea.setForeground(TEXT_MUTED);
         descArea.setEditable(false);
         descArea.setLineWrap(true);
         descArea.setWrapStyleWord(true);
         descArea.setOpaque(false);
-        descArea.setBackground(new Color(0,0,0,0));
+        descArea.setBorder(null);
+        descArea.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        descArea.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        // Deadline pill
+        JLabel deadlineLabel = new JLabel("📅  Deadline: " + formatDateTime(task.getDeadline().toString()));
+        deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        deadlineLabel.setForeground(TEXT_MUTED);
+        deadlineLabel.setBorder(new EmptyBorder(5, 10, 5, 10));
+
+        JPanel deadlinePill = new JPanel(new BorderLayout()) {
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(new Color(0xF8, 0xFA, 0xFC));
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.setColor(BORDER_CLR);
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        deadlinePill.setOpaque(false);
+        deadlinePill.add(deadlineLabel, BorderLayout.CENTER);
+        deadlinePill.setMaximumSize(new Dimension(280, 30));
+        deadlinePill.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        leftPanel.add(titleLabel);
+        leftPanel.add(Box.createVerticalStrut(6));
         leftPanel.add(descArea);
         leftPanel.add(Box.createVerticalStrut(10));
-        
-        // Deadline label (e.g. 29 Mei 2026, 23.59)
-        String deadlineStr = formatDateTime(task.getDeadline().toString());
-        JLabel deadlineLabel = new JLabel(deadlineStr);
-        deadlineLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        deadlineLabel.setForeground(Color.GRAY);
-        deadlineLabel.setOpaque(true);
-        deadlineLabel.setBackground(new Color(241, 245, 249)); // light slate capsule
-        deadlineLabel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1),
-            BorderFactory.createEmptyBorder(3, 8, 3, 8)
-        ));
-        leftPanel.add(deadlineLabel);
-        
-        // Right Panel: Action Button / Badge
-        JPanel rightPanel = new JPanel(new GridBagLayout());
+        leftPanel.add(deadlinePill);
+
+        // Kanan: status + tombol
+        JPanel rightPanel = new JPanel(new BorderLayout(0, 10));
         rightPanel.setOpaque(false);
-        
+        rightPanel.setPreferredSize(new Dimension(150, 0));
+
+        JLabel statusBadge = createStatusBadge(status);
+        rightPanel.add(statusBadge, BorderLayout.NORTH);
+
         if ("Accepted".equalsIgnoreCase(status)) {
-            // "Diterima" Badge (disabled look)
-            JLabel badge = new JLabel("  Diterima  ");
-            badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            badge.setBackground(new Color(240, 253, 244)); // soft green
-            badge.setForeground(new Color(22, 163, 74));
-            badge.setOpaque(true);
-            badge.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(22, 163, 74), 1),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)
-            ));
-            rightPanel.add(badge);
+            rightPanel.add(createSmallNote("✓ Submission diterima"), BorderLayout.SOUTH);
         } else if ("Submitted".equalsIgnoreCase(status)) {
-            // "Terkirim" Badge (disabled look)
-            JLabel badge = new JLabel("  Terkirim  ");
-            badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            badge.setBackground(new Color(241, 245, 249)); // light slate
-            badge.setForeground(Color.GRAY);
-            badge.setOpaque(true);
-            badge.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color.GRAY, 1),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)
-            ));
-            rightPanel.add(badge);
+            rightPanel.add(createSmallNote("⏳ Menunggu review"), BorderLayout.SOUTH);
         } else {
-            // "Add Submission" Button
-            JButton addSubBtn = new JButton("Add Submission");
+            JButton addSubBtn = new JButton("+ Kumpulkan") {
+                protected void paintComponent(Graphics g) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    g2.setColor(getModel().isRollover() ? new Color(23, 122, 66) : GREEN_PRIMARY);
+                    g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                    g2.dispose();
+                    super.paintComponent(g);
+                }
+            };
             addSubBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            addSubBtn.setBackground(new Color(25, 118, 210));
             addSubBtn.setForeground(Color.WHITE);
             addSubBtn.setFocusPainted(false);
+            addSubBtn.setBorderPainted(false);
+            addSubBtn.setContentAreaFilled(false);
+            addSubBtn.setOpaque(false);
+            addSubBtn.setBorder(new EmptyBorder(8, 14, 8, 14));
             addSubBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
             addSubBtn.addActionListener(e -> {
                 SubmissionForm form = new SubmissionForm(task.getId(), userId);
                 form.setVisible(true);
-                loadTasks(); // refresh view
+                loadTasks();
             });
-            rightPanel.add(addSubBtn);
+            rightPanel.add(addSubBtn, BorderLayout.SOUTH);
         }
-        
-        card.add(leftPanel, BorderLayout.CENTER);
+
+        card.add(leftPanel,  BorderLayout.CENTER);
         card.add(rightPanel, BorderLayout.EAST);
-        
-        // Dynamically adjust height to accommodate wrap text in description
-        // Let's set a reasonable maximum/preferred height
-        card.setPreferredSize(new Dimension(800, 160));
-        card.setMaximumSize(new Dimension(800, 160));
-        
         return card;
+    }
+
+    private JLabel createStatusBadge(String status) {
+        boolean accepted = "Accepted".equalsIgnoreCase(status);
+        boolean submitted = "Submitted".equalsIgnoreCase(status);
+
+        String text;
+        Color bg;
+        Color fg;
+        if (accepted) {
+            text = "Diterima";
+            bg = new Color(220, 252, 231);
+            fg = new Color(22, 163, 74);
+        } else if (submitted) {
+            text = "Terkirim";
+            bg = new Color(241, 245, 249);
+            fg = TEXT_MUTED;
+        } else {
+            text = "Belum Kumpul";
+            bg = new Color(254, 243, 199);
+            fg = new Color(180, 120, 0);
+        }
+
+        JLabel badge = new JLabel(text, SwingConstants.CENTER) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(bg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        badge.setForeground(fg);
+        badge.setOpaque(false);
+        badge.setBorder(new EmptyBorder(7, 12, 7, 12));
+        return badge;
+    }
+
+    private JLabel createSmallNote(String text) {
+        JLabel label = new JLabel(text, SwingConstants.CENTER);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        label.setForeground(TEXT_MUTED);
+        return label;
     }
     
     private String formatDateTime(String dateStr) {
@@ -210,5 +317,47 @@ public class TaskView extends JPanel {
             // fallback
         }
         return dateStr;
+    }
+
+    private static class RoundedPanel extends JPanel {
+        RoundedPanel() {
+            setOpaque(false);
+            setBackground(CARD_BG);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(CARD_BG);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 14, 14);
+            g2.setColor(BORDER_CLR);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 14, 14);
+            g2.dispose();
+            super.paintComponent(g);
+        }
+    }
+
+    private static class RoundedPill extends JPanel {
+        private Color bg;
+        private Color border;
+
+        RoundedPill(Color bg, Color border) {
+            this.bg = bg;
+            this.border = border;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(bg);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
+            g2.setColor(border);
+            g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 8, 8);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 }
