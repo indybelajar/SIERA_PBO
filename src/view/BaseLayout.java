@@ -208,7 +208,7 @@ public class BaseLayout extends JFrame {
         menuContainer = new JPanel();
         menuContainer.setLayout(new BoxLayout(menuContainer, BoxLayout.Y_AXIS));
         menuContainer.setOpaque(false);
-        menuContainer.setBorder(new EmptyBorder(6, 10, 6, 10));
+        menuContainer.setBorder(new EmptyBorder(8, 16, 8, 16));
 
         JScrollPane menuScroll = new JScrollPane(menuContainer);
         menuScroll.setOpaque(false);
@@ -229,29 +229,49 @@ public class BaseLayout extends JFrame {
         JButton logoutBtn = createMenuButton("Logout", "\u21AA");
         logoutBtn.addActionListener(e -> handleLogout());
         logoutBtn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                if (!activePageLabel.equals("Logout")) {
-                    logoutBtn.setBackground(LOGOUT_RED_BG);
-                    logoutBtn.setContentAreaFilled(true);
-                    logoutBtn.setOpaque(true);
-                    JLabel tl = (JLabel) logoutBtn.getClientProperty("textLbl");
-                    JLabel il = (JLabel) logoutBtn.getClientProperty("iconLbl");
-                    if (tl != null) tl.setForeground(LOGOUT_RED_TEXT);
-                    if (il != null) il.setForeground(LOGOUT_RED_TEXT);
-                }
+        public void mouseEntered(MouseEvent e) {
+            // Cukup set warnanya, JANGAN panggil setOpaque(true)
+            logoutBtn.setBackground(LOGOUT_RED_BG);
+            JLabel tl = (JLabel) logoutBtn.getClientProperty("textLbl");
+            JLabel il = (JLabel) logoutBtn.getClientProperty("iconLbl");
+            if (tl != null) tl.setForeground(LOGOUT_RED_TEXT);
+            if (il != null) il.setForeground(LOGOUT_RED_TEXT);
+            logoutBtn.repaint();
+        }
+        
+        public void mouseExited(MouseEvent e) {
+            logoutBtn.setBackground(TRANSPARENT);
+            JLabel tl = (JLabel) logoutBtn.getClientProperty("textLbl");
+            JLabel il = (JLabel) logoutBtn.getClientProperty("iconLbl");
+            if (tl != null) tl.setForeground(MENU_TEXT_INACTIVE);
+            if (il != null) il.setForeground(MENU_TEXT_INACTIVE);
+            logoutBtn.repaint();
+        }
+        
+        public void mousePressed(MouseEvent e) {
+            // Pertahankan warna merah bahaya saat ditekan, hilangkan setOpaque(true)
+            logoutBtn.setBackground(new Color(200, 40, 40, 80));
+            JLabel tl2 = (JLabel) logoutBtn.getClientProperty("textLbl");
+            JLabel il2 = (JLabel) logoutBtn.getClientProperty("iconLbl");
+            if (tl2 != null) tl2.setForeground(LOGOUT_RED_TEXT);
+            if (il2 != null) il2.setForeground(LOGOUT_RED_TEXT);
+            logoutBtn.repaint();
+        }
+        
+        public void mouseReleased(MouseEvent e) {
+            // Fix logic penentu kursor ada di dalam area tombol
+            if (logoutBtn.contains(e.getPoint())) {
+                logoutBtn.setBackground(LOGOUT_RED_BG);
+            } else {
+                logoutBtn.setBackground(TRANSPARENT);
+                JLabel tl = (JLabel) logoutBtn.getClientProperty("textLbl");
+                JLabel il = (JLabel) logoutBtn.getClientProperty("iconLbl");
+                if (tl != null) tl.setForeground(MENU_TEXT_INACTIVE);
+                if (il != null) il.setForeground(MENU_TEXT_INACTIVE);
             }
-            public void mouseExited(MouseEvent e) {
-                if (!activePageLabel.equals("Logout")) {
-                    logoutBtn.setBackground(TRANSPARENT);
-                    logoutBtn.setContentAreaFilled(false);
-                    logoutBtn.setOpaque(false);
-                    JLabel tl = (JLabel) logoutBtn.getClientProperty("textLbl");
-                    JLabel il = (JLabel) logoutBtn.getClientProperty("iconLbl");
-                    if (tl != null) tl.setForeground(MENU_TEXT_INACTIVE);
-                    if (il != null) il.setForeground(MENU_TEXT_INACTIVE);
-                }
-            }
-        });
+            logoutBtn.repaint();
+        }
+    });
         logoutWrapper.add(logoutBtn, BorderLayout.CENTER);
         bottomSection.add(logoutWrapper, BorderLayout.CENTER);
 
@@ -280,26 +300,36 @@ public class BaseLayout extends JFrame {
         JButton btn = new JButton() {
             @Override
             protected void paintComponent(Graphics g) {
-                if (isOpaque() && getBackground().getAlpha() > 0) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    g2.setColor(getBackground());
+                // Gambar background sendiri — blokir Swing default pressed (abu)
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color bg = getBackground();
+                if (bg != null && bg.getAlpha() > 0) {
+                    g2.setColor(bg);
                     g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                    g2.dispose();
                 }
+                g2.dispose();
+                // Panggil super TANPA content area (sudah di-disable)
                 super.paintComponent(g);
             }
         };
-        btn.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 0));
+
+        // Pakai BorderLayout agar konten selalu center vertikal
+        btn.setLayout(new BorderLayout());
         btn.setOpaque(false);
-        btn.setContentAreaFilled(false);
+        btn.setContentAreaFilled(false);  // matikan fill bawaan Swing
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setMaximumSize(new Dimension(212, 44));
-        btn.setPreferredSize(new Dimension(212, 44));
+        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
+        btn.setPreferredSize(new Dimension(220, 44));
+        btn.setAlignmentX(Component.LEFT_ALIGNMENT);
         btn.setMinimumSize(new Dimension(212, 44));
-        btn.setBorder(new EmptyBorder(0, 6, 0, 6));
+        btn.setBorder(new EmptyBorder(0, 10, 0, 10));
+
+        // Inner panel: icon circle + label, horizontally left, vertically centered
+        JPanel inner = new JPanel(new BorderLayout(10, 0));
+        inner.setOpaque(false);
 
         // Icon circle
         JPanel iconCircle = new JPanel(new GridBagLayout()) {
@@ -315,6 +345,7 @@ public class BaseLayout extends JFrame {
         };
         iconCircle.setOpaque(false);
         iconCircle.setPreferredSize(new Dimension(28, 28));
+        iconCircle.setMinimumSize(new Dimension(28, 28));
         iconCircle.setMaximumSize(new Dimension(28, 28));
         JLabel iconLbl = new JLabel(icon);
         iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
@@ -325,8 +356,23 @@ public class BaseLayout extends JFrame {
         textLbl.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         textLbl.setForeground(MENU_TEXT_INACTIVE);
 
-        btn.add(iconCircle);
-        btn.add(textLbl);
+        JPanel iconWrap = new JPanel(new GridBagLayout());
+        iconWrap.setOpaque(false);
+        iconWrap.setPreferredSize(new Dimension(28, 28));
+        iconWrap.add(iconCircle);
+
+        inner.add(iconWrap, BorderLayout.WEST);
+        inner.add(textLbl,  BorderLayout.CENTER);
+
+        // Wrapper panel agar inner panel center vertikal di dalam button 44px
+        JPanel centerWrap = new JPanel(new GridBagLayout());
+        centerWrap.setOpaque(false);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+        centerWrap.add(inner, gbc);
+
+        btn.add(centerWrap, BorderLayout.CENTER);
 
         btn.putClientProperty("iconCircle", iconCircle);
         btn.putClientProperty("iconLbl",    iconLbl);
@@ -380,8 +426,6 @@ public class BaseLayout extends JFrame {
 
             if (active) {
                 btn.setBackground(ACTIVE_MENU_BG);
-                btn.setContentAreaFilled(true);
-                btn.setOpaque(true);
                 if (textLbl != null) { textLbl.setFont(new Font("Segoe UI", Font.BOLD,  14)); textLbl.setForeground(GREEN_PRIMARY); }
                 if (iconLbl != null) { iconLbl.setForeground(GREEN_PRIMARY); }
             } else {

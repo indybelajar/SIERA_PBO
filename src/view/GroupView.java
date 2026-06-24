@@ -32,17 +32,12 @@ public class GroupView extends JPanel {
     private User mentorUser;
     private List<User> menteesList;
 
+    // Warna statis lokal khusus struktural yang tidak ada di BaseLayout
     private static final Color BG_PAGE    = new Color(0xF9, 0xFA, 0xFB);
     private static final Color TEXT_DARK  = new Color(0x11, 0x18, 0x27);
     private static final Color TEXT_MUTED = new Color(0x6B, 0x72, 0x80);
     private static final Color CARD_BG    = Color.WHITE;
     private static final Color BORDER_CLR = new Color(0xE5, 0xE7, 0xEB);
-    
-    private static final Color GREEN_PRIMARY = new Color(0x05, 0x96, 0x69); 
-    private static final Color GREEN_LIGHT   = new Color(0xD1, 0xFA, 0xE5);
-    
-    private static final Color PILL_BG = new Color(0xE6, 0xF4, 0xEA);
-    private static final Color PILL_FG = new Color(0x1E, 0x8E, 0x3E);
 
     public GroupView(int groupId, User currentUser) {
         this.groupId = groupId;
@@ -75,7 +70,7 @@ public class GroupView extends JPanel {
         
         JLabel groupIcon = new JLabel("\uD83D\uDC65"); 
         groupIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
-        groupIcon.setForeground(GREEN_PRIMARY);
+        groupIcon.setForeground(BaseLayout.GREEN_PRIMARY);
         
         mainTitlePanel.add(groupNameLabel);
         mainTitlePanel.add(groupIcon);
@@ -142,20 +137,24 @@ public class GroupView extends JPanel {
         tableCardPanel.setLayout(new BorderLayout());
         tableCardPanel.setBorder(BorderFactory.createLineBorder(BORDER_CLR, 1, true));
         
-        String[] columns = {"No.", "Nama", "NIM", "Jurusan", "Email", "Kontak", "Aksi"};
+        // KONSISTENSI: Kolom "Aksi" dihilangkan sesuai request lu sebelumnya
+        String[] columns = {"No.", "Nama", "NIM", "Jurusan", "Email", "Kontak"};
         memberTableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) { return false; }
         };
         
         memberTable = new JTable(memberTableModel);
-        memberTable.setRowHeight(60); 
+        memberTable.setRowHeight(50); 
         memberTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         memberTable.setOpaque(true);
         memberTable.setBackground(CARD_BG);
         memberTable.setForeground(TEXT_DARK);
-        memberTable.setShowGrid(false); 
-        memberTable.setIntercellSpacing(new Dimension(0, 0));
+        
+        // MENGAKTIFKAN GRID AGAR TABEL RAPI KOTAK-KOTAK
+        memberTable.setShowGrid(true); 
+        memberTable.setGridColor(BORDER_CLR);
+        memberTable.setIntercellSpacing(new Dimension(1, 1));
         memberTable.setFillsViewportHeight(true);
         
         setupTableRenderers();
@@ -178,9 +177,7 @@ public class GroupView extends JPanel {
                 lbl.setOpaque(true);
                 lbl.setBackground(CARD_BG);
                 lbl.setForeground(TEXT_DARK);
-                lbl.setBorder(BorderFactory.createCompoundBorder(
-                    new MatteBorder(0, 0, 1, 0, BORDER_CLR), new EmptyBorder(0, 15, 0, 15)
-                ));
+                lbl.setBorder(new EmptyBorder(0, 15, 0, 15));
                 return lbl;
             }
         };
@@ -192,9 +189,8 @@ public class GroupView extends JPanel {
         memberTable.getColumnModel().getColumn(1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
+                JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
                 panel.setBackground(CARD_BG);
-                panel.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
                 
                 JPanel avatar = createAvatarIcon();
                 avatar.setPreferredSize(new Dimension(35, 35));
@@ -211,16 +207,15 @@ public class GroupView extends JPanel {
         memberTable.getColumnModel().getColumn(3).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JPanel wrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15));
+                JPanel wrap = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
                 wrap.setBackground(CARD_BG);
-                wrap.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
                 
                 JPanel pill = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 4)) {
                     @Override
                     protected void paintComponent(Graphics g) {
                         Graphics2D g2 = (Graphics2D) g.create();
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(PILL_BG);
+                        g2.setColor(BaseLayout.GREEN_LIGHT);
                         g2.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
                         g2.dispose();
                     }
@@ -228,28 +223,10 @@ public class GroupView extends JPanel {
                 pill.setOpaque(false);
                 JLabel txt = new JLabel(v != null ? v.toString() : "");
                 txt.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                txt.setForeground(PILL_FG);
+                // FIX KONSISTENSI: Ubah ke GREEN_PRIMARY agar sama dengan Dashboard
+                txt.setForeground(BaseLayout.GREEN_PRIMARY);
                 pill.add(txt);
                 wrap.add(pill);
-                return wrap;
-            }
-        });
-
-        memberTable.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
-            @Override
-            public Component getTableCellRendererComponent(JTable t, Object v, boolean s, boolean f, int r, int c) {
-                JPanel wrap = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 15));
-                wrap.setBackground(CARD_BG);
-                wrap.setBorder(new MatteBorder(0, 0, 1, 0, BORDER_CLR));
-                
-                JLabel dots = new JLabel("\u2807");
-                dots.setFont(new Font("Segoe UI", Font.BOLD, 18));
-                dots.setForeground(TEXT_MUTED);
-                dots.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(BORDER_CLR, 1),
-                    new EmptyBorder(2, 8, 2, 8)
-                ));
-                wrap.add(dots);
                 return wrap;
             }
         });
@@ -285,7 +262,7 @@ public class GroupView extends JPanel {
         
         JLabel icon = new JLabel(iconUnicode);
         icon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
-        icon.setForeground(GREEN_PRIMARY);
+        icon.setForeground(BaseLayout.GREEN_PRIMARY);
         
         JLabel lblTitle = new JLabel(title);
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -320,7 +297,8 @@ public class GroupView extends JPanel {
         };
         iconCircle.setPreferredSize(new Dimension(50, 50));
         iconCircle.setOpaque(false);
-        JLabel iconLbl = new JLabel("\uD83D\uDC68\uD83C\uDFFB\u200D\uD83E\uDDB1"); 
+        // FIX EMOJI: Menggunakan emoji siluet standar agar tidak Tofu/Pucat di Windows
+        JLabel iconLbl = new JLabel("\uD83D\uDC64"); 
         iconLbl.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         iconCircle.add(iconLbl);
         return iconCircle;
@@ -349,7 +327,7 @@ public class GroupView extends JPanel {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(getModel().isRollover() ? new Color(0x04, 0x78, 0x57) : GREEN_PRIMARY); 
+                g2.setColor(getModel().isRollover() ? BaseLayout.GREEN_DARK : BaseLayout.GREEN_PRIMARY); 
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 8, 8);
                 g2.dispose();
                 super.paintComponent(g);
@@ -394,7 +372,8 @@ public class GroupView extends JPanel {
         for (User mentee : menteesList) {
             String jurusan = (mentee.getJurusan() == null || mentee.getJurusan().trim().isEmpty()) ? "-" : mentee.getJurusan();
             String kontak = (mentee.getKontak() == null || mentee.getKontak().trim().isEmpty()) ? "-" : mentee.getKontak();
-            memberTableModel.addRow(new Object[]{no++, mentee.getName(), mentee.getId(), jurusan, mentee.getEmail(), kontak, ""});
+            // FIX KONSISTENSI: Hilangkan empty string "" di akhir array yang memicu bug saat kolom Aksi dihapus
+            memberTableModel.addRow(new Object[]{no++, mentee.getName(), mentee.getId(), jurusan, mentee.getEmail(), kontak});
         }
     }
 }
