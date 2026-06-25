@@ -57,6 +57,9 @@ public class MenteeDashboard extends BaseLayout {
         scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         root.add(scroll, BorderLayout.CENTER);
 
+        // Populate initially
+        populateDashboard(body);
+
         scroll.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -71,44 +74,48 @@ public class MenteeDashboard extends BaseLayout {
         root.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) {
-                body.removeAll();
-
-                // Stat cards
-                JPanel statsWrapper = new JPanel(new BorderLayout());
-                statsWrapper.setOpaque(false);
-                statsWrapper.setBorder(new EmptyBorder(0, 0, 4, 0));
-                statsWrapper.add(createStatCardsRow(), BorderLayout.CENTER);
-                body.add(statsWrapper, BorderLayout.NORTH);
-
-                // Middle: tugas terbaru + info kehadiran + pengumuman
-                JPanel middle = new JPanel(new BorderLayout(20, 0));
-                middle.setOpaque(false);
-
-                JPanel leftCol = new JPanel();
-                leftCol.setLayout(new BoxLayout(leftCol, BoxLayout.Y_AXIS));
-                leftCol.setOpaque(false);
-
-                leftCol.add(createFeaturedAnnouncement());
-                leftCol.add(Box.createRigidArea(new Dimension(0, 16)));
-                leftCol.add(createAnnouncementList());
-                leftCol.add(Box.createRigidArea(new Dimension(0, 16)));
-                leftCol.add(createRecentTasksCard());
-
-                middle.add(leftCol, BorderLayout.CENTER);
-
-                JPanel attendanceColumn = new JPanel(new BorderLayout());
-                attendanceColumn.setOpaque(false);
-                attendanceColumn.setPreferredSize(new Dimension(270, 0));
-                attendanceColumn.add(createAttendanceSummaryCard(), BorderLayout.NORTH);
-                middle.add(attendanceColumn, BorderLayout.EAST);
-                body.add(middle, BorderLayout.CENTER);
-
-                body.revalidate();
-                body.repaint();
+                populateDashboard(body);
             }
         });
 
         return root;
+    }
+
+    private void populateDashboard(JPanel body) {
+        body.removeAll();
+
+        // Stat cards
+        JPanel statsWrapper = new JPanel(new BorderLayout());
+        statsWrapper.setOpaque(false);
+        statsWrapper.setBorder(new EmptyBorder(0, 0, 4, 0));
+        statsWrapper.add(createStatCardsRow(), BorderLayout.CENTER);
+        body.add(statsWrapper, BorderLayout.NORTH);
+
+        // Middle: tugas terbaru + info kehadiran + pengumuman
+        JPanel middle = new JPanel(new BorderLayout(20, 0));
+        middle.setOpaque(false);
+
+        JPanel leftCol = new JPanel();
+        leftCol.setLayout(new BoxLayout(leftCol, BoxLayout.Y_AXIS));
+        leftCol.setOpaque(false);
+
+        leftCol.add(createFeaturedAnnouncement());
+        leftCol.add(Box.createRigidArea(new Dimension(0, 16)));
+        leftCol.add(createAnnouncementList());
+        leftCol.add(Box.createRigidArea(new Dimension(0, 16)));
+        leftCol.add(createRecentTasksCard());
+
+        middle.add(leftCol, BorderLayout.CENTER);
+
+        JPanel attendanceColumn = new JPanel(new BorderLayout());
+        attendanceColumn.setOpaque(false);
+        attendanceColumn.setPreferredSize(new Dimension(270, 0));
+        attendanceColumn.add(createAttendanceSummaryCard(), BorderLayout.NORTH);
+        middle.add(attendanceColumn, BorderLayout.EAST);
+        body.add(middle, BorderLayout.CENTER);
+
+        body.revalidate();
+        body.repaint();
     }
 
     // ── Top bar ───────────────────────────────────────────────────────
