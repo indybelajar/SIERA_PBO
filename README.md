@@ -120,11 +120,12 @@ java -cp "bin:lib/mysql-connector-j-9.7.0.jar:lib/flatlaf-3.4.1.jar" Main
 
 ## 🔑 Akun Demo
 
-| Role | Email | Password |
+| Nama / Role | Username / NIM (Email Prefix) | Password |
 |------|-------|----------|
-| Mentor | mentor@pkkmb.com | mentor123 |
-| Mentee 1 | mentee1@pkkmb.com | mentee123 |
-| Mentee 2 | mentee2@pkkmb.com | mentee123 |
+| Zulfi Alisya (Mentor) | 2410512120 | mentor123 |
+| Indy Agustin (Mentor) | 2410512106 | mentor123 |
+| Tasya Angellica (Mentee) | 2410512130 | mentee123 |
+| Naura Belva (Mentee) | 2410512117 | mentee123 |
 
 ## 📦 Cara Export ke JAR (Untuk Teman)
 

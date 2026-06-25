@@ -95,7 +95,7 @@ INSERT INTO users (id, name, email, password, role, group_id) VALUES
 (2410512120, 'Zulfi Alisya', '2410512120@mahasiswa.upnvj.ac.id', 'mentor123', 'mentor', 1),
 (2410512106, 'Indy Agustin', '2410512106@mahasiswa.upnvj.ac.id', 'mentor123', 'mentor', 2),
 (2410512130, 'Tasya Angellica Sugiharto', '2410512130@mahasiswa.upnvj.ac.id', 'mentee123', 'mentee', 2),
-(2410512117, 'Naura Belva Qonita', '2410512117@mahasiawa.upnvj.ac.id', 'mentee123', 'mentee', 1);
+(2410512117, 'Naura Belva Qonita', '2410512117@mahasiswa.upnvj.ac.id', 'mentee123', 'mentee', 1);
 
 -- Insert User Profiles (Jurusan & Fakultas diisi agar tidak kosong)
 INSERT INTO user_profiles (user_id, jurusan, fakultas, kontak, bio) VALUES
